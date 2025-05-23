@@ -40,7 +40,7 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
               const saturation = 70 + fillLevel * 30;
               const lightness = 35 + fillLevel * 30;
               material.color = new THREE.Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-              material.opacity = 0.7 + fillLevel * 0.3; // More transparent to show fill effect
+              material.opacity = 0.3; // More transparent to show inner fill
               material.transparent = true;
               material.metalness = 0.1;
               material.roughness = 0.4;
@@ -51,27 +51,27 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
     }
   }, [fillLevel, scene]);
 
-  // Create water bottle-like fill effect
-  const fillHeight = fillLevel * 3; // Scale fill height
+  // Create inner fill effect that fills from bottom to top inside the lungs
+  const fillHeight = fillLevel * 2.5; // Scale fill height to fit inside lungs
   const fillColor = fillLevel < 0.25 ? "#ef4444" : fillLevel < 0.5 ? "#f59e0b" : fillLevel < 0.75 ? "#f97316" : "#10b981";
   
   return (
     <group ref={meshRef} position={[0, 0, 0]}>
-      {/* Render GLB model with larger scale */}
+      {/* Render GLB model with larger scale and transparency */}
       <primitive object={scene.clone()} scale={[3, 3, 3]} />
       
-      {/* Water bottle-like fill effect - positioned to fill from bottom */}
+      {/* Inner fill effect - positioned inside the lungs, filling from bottom up */}
       <mesh 
         ref={fillRef}
-        position={[0, -1.5 + fillHeight/2, 0]} // Position fill from bottom up
+        position={[0, -1.2 + fillHeight/2, 0]} // Position fill inside lungs from bottom up
       >
-        <boxGeometry args={[2.5, fillHeight, 1.5]} />
+        <boxGeometry args={[1.8, fillHeight, 1.2]} /> {/* Smaller geometry to fit inside lungs */}
         <meshStandardMaterial 
           color={fillColor}
           transparent
-          opacity={0.6}
+          opacity={0.8}
           emissive={new THREE.Color(fillColor)}
-          emissiveIntensity={0.2}
+          emissiveIntensity={0.3}
         />
       </mesh>
     </group>
@@ -124,19 +124,22 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount }) => {
           autoRotate={false}
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 1.2}
-          minDistance={4}
-          maxDistance={12}
-          zoomSpeed={0.8}
+          minDistance={3}
+          maxDistance={15}
+          zoomSpeed={1.2}
         />
       </Canvas>
       
-      {/* Chapter name and progress information with higher z-index */}
-      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
+      {/* IKSC KARE information positioned at top-middle */}
+      <div className="absolute top-24 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
         <h3 className="text-2xl font-bold text-gray-800">IKSC KARE</h3>
         <p className="text-lg font-semibold text-blue-600">Healthy Lungs Progress</p>
-        <p className="text-gray-600 text-sm mt-1">
-          {pledgeCount} / 200 pledges ({fillPercentage}% filled)
-        </p>
+      </div>
+      
+      {/* Simplified pledge display showing only count and percentage */}
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
+        <p className="text-2xl font-bold text-gray-800">{pledgeCount} Pledges</p>
+        <p className="text-lg text-gray-600">{fillPercentage}% Filled</p>
         <div className="w-48 bg-gray-200 rounded-full h-3 mt-2">
           <div 
             className={`h-3 rounded-full transition-all duration-1000 ease-out ${
