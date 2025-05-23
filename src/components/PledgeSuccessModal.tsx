@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { toast } from '@/components/ui/toaster';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PledgeSuccessModalProps {
