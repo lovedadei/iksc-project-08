@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
@@ -10,9 +11,19 @@ interface LungsModelProps {
 
 function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
   const meshRef = useRef<THREE.Group>(null);
+  const [useGLBModel, setUseGLBModel] = useState(true);
+  const [glbError, setGlbError] = useState(false);
   
-  // Load your GLB file - replace '/path/to/your/lungs.glb' with your actual file path
-  const { scene } = useGLTF('/lungs.glb'); // Put your GLB file in the public folder
+  // Try to load GLB file with error handling
+  let glbData = null;
+  try {
+    if (useGLBModel && !glbError) {
+      glbData = useGLTF('/lungs.glb');
+    }
+  } catch (error) {
+    console.log('GLB file not found, using procedural model');
+    setGlbError(true);
+  }
   
   // Breathing animation
   useFrame((state) => {
@@ -26,27 +37,58 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
     }
   });
 
-  // Clone the scene to avoid sharing between instances
-  const clonedScene = scene.clone();
-  
-  // Apply material changes based on fill level
+  // Apply material changes to GLB model if available
   useEffect(() => {
-    clonedScene.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.material) {
-        // Modify material properties based on fillLevel
-        const material = child.material as THREE.MeshStandardMaterial;
-        if (material.color) {
-          material.color = new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`);
-          material.opacity = 0.8 + fillLevel * 0.2;
-          material.transparent = true;
+    if (glbData?.scene && !glbError) {
+      const clonedScene = glbData.scene.clone();
+      clonedScene.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material) {
+          const material = child.material as THREE.MeshStandardMaterial;
+          if (material.color) {
+            material.color = new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`);
+            material.opacity = 0.8 + fillLevel * 0.2;
+            material.transparent = true;
+          }
         }
-      }
-    });
-  }, [fillLevel, clonedScene]);
+      });
+    }
+  }, [fillLevel, glbData, glbError]);
   
   return (
     <group ref={meshRef} position={[0, 0, 0]}>
-      <primitive object={clonedScene} />
+      {/* Render GLB model if available, otherwise use procedural model */}
+      {glbData?.scene && !glbError ? (
+        <primitive object={glbData.scene.clone()} />
+      ) : (
+        // Procedural lung model fallback
+        <>
+          {/* Left Lung */}
+          <mesh position={[-0.8, 0, 0]}>
+            <sphereGeometry args={[0.6, 16, 16]} />
+            <meshStandardMaterial 
+              color={new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`)}
+              opacity={0.8 + fillLevel * 0.2}
+              transparent
+            />
+          </mesh>
+          
+          {/* Right Lung */}
+          <mesh position={[0.8, 0, 0]}>
+            <sphereGeometry args={[0.6, 16, 16]} />
+            <meshStandardMaterial 
+              color={new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`)}
+              opacity={0.8 + fillLevel * 0.2}
+              transparent
+            />
+          </mesh>
+          
+          {/* Trachea */}
+          <mesh position={[0, 0.8, 0]}>
+            <cylinderGeometry args={[0.1, 0.1, 0.6, 8]} />
+            <meshStandardMaterial color={new THREE.Color("#4a5568")} />
+          </mesh>
+        </>
+      )}
       
       {/* Fill level indicator - particles/energy */}
       {Array.from({ length: Math.floor(fillLevel * 50) }).map((_, i) => (
