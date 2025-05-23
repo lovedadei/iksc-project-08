@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,12 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Campaign-specific colors
+				'bloom-pink': 'hsl(var(--bloom-pink))',
+				'nature-green': 'hsl(var(--nature-green))',
+				'sky-blue': 'hsl(var(--sky-blue))',
+				'fresh-mint': 'hsl(var(--fresh-mint))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -89,6 +95,10 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			backgroundImage: {
+				'fresh-gradient': 'linear-gradient(135deg, hsl(var(--sky-blue)) 0%, hsl(var(--fresh-mint)) 50%, hsl(var(--nature-green)) 100%)',
+				'bloom-gradient': 'linear-gradient(135deg, hsl(var(--bloom-pink)) 0%, hsl(var(--sky-blue)) 100%)'
 			}
 		}
 	},
