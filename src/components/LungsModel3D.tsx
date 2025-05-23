@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface LungsModelProps {
@@ -34,7 +34,7 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
       <mesh position={[-0.8, 0, 0]}>
         <sphereGeometry args={[0.6, 16, 16]} />
         <meshStandardMaterial 
-          color={`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`}
+          color={new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`)}
           opacity={0.8 + fillLevel * 0.2}
           transparent
         />
@@ -44,7 +44,7 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
       <mesh position={[0.8, 0, 0]}>
         <sphereGeometry args={[0.6, 16, 16]} />
         <meshStandardMaterial 
-          color={`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`}
+          color={new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`)}
           opacity={0.8 + fillLevel * 0.2}
           transparent
         />
@@ -53,7 +53,7 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
       {/* Trachea */}
       <mesh position={[0, 0.8, 0]}>
         <cylinderGeometry args={[0.1, 0.1, 0.6, 8]} />
-        <meshStandardMaterial color="#4a5568" />
+        <meshStandardMaterial color={new THREE.Color("#4a5568")} />
       </mesh>
       
       {/* Fill level indicator - particles/energy */}
@@ -68,8 +68,8 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
         >
           <sphereGeometry args={[0.02, 8, 8]} />
           <meshStandardMaterial 
-            color="#10b981" 
-            emissive="#065f46"
+            color={new THREE.Color("#10b981")} 
+            emissive={new THREE.Color("#065f46")}
             emissiveIntensity={fillLevel}
           />
         </mesh>
