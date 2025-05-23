@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 const Index = () => {
-  const [pledgeCount, setPledgeCount] = useState(47); // Starting with some example pledges
+  const [pledgeCount, setPledgeCount] = useState(100); // Starting with 100 pledges as requested
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [currentPledge, setCurrentPledge] = useState({
     userName: '',
