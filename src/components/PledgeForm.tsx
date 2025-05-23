@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -170,13 +171,15 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
             .maybeSingle();
 
           if (referrerPledge) {
+            console.log('Found referrer pledge:', referrerPledge.id);
             // Add referral record
             const { error: referralError } = await supabase
               .from('referrals')
               .insert({
                 referrer_pledge_id: referrerPledge.id,
                 referred_pledge_id: newPledge.id,
-                referral_code: formData.referralCode
+                referral_code: formData.referralCode,
+                points_awarded: 5 // Giving more points to encourage referrals
               });
 
             if (referralError) {
@@ -184,6 +187,8 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
             } else {
               console.log('Referral created successfully');
             }
+          } else {
+            console.log('No referrer found with code:', formData.referralCode);
           }
         }
 
