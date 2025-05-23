@@ -23,17 +23,17 @@ function Bottle({ fillLevel }: { fillLevel: number }) {
   
   return (
     <group ref={bottleRef}>
-      {/* Bottle glass - transparent cylinder */}
+      {/* Bottle glass - more transparent cylinder */}
       <mesh position={[0, 0, 0]} receiveShadow>
         <cylinderGeometry args={[bottleRadius, bottleRadius, bottleHeight, 32]} />
         <meshPhysicalMaterial
           color="#ffffff"
           transparent={true}
-          opacity={0.3}
-          thickness={0.5}
+          opacity={0.15}
+          thickness={0.2}
           roughness={0}
-          metalness={0.1}
-          transmission={0.95}
+          metalness={0}
+          transmission={0.98}
         />
       </mesh>
       
@@ -43,15 +43,15 @@ function Bottle({ fillLevel }: { fillLevel: number }) {
         <meshStandardMaterial color="#555555" />
       </mesh>
       
-      {/* Water inside bottle */}
+      {/* Green water inside bottle */}
       <mesh position={[0, -bottleHeight/2 + waterHeight/2, 0]}>
         <cylinderGeometry args={[bottleRadius * 0.95, bottleRadius * 0.95, waterHeight, 32]} />
         <meshStandardMaterial
           color="#10b981"
           transparent={true}
-          opacity={0.5}
+          opacity={0.4}
           emissive="#10b981"
-          emissiveIntensity={0.2}
+          emissiveIntensity={0.1}
         />
       </mesh>
     </group>
@@ -70,7 +70,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   useFrame((state) => {
     if (meshRef.current) {
       const time = state.clock.getElapsedTime();
-      const breatheScale = 1.5 + Math.sin(time * 0.5) * 0.05;
+      const breatheScale = 1.2 + Math.sin(time * 0.5) * 0.03;
       
       // Apply blooming animation when shouldAnimate is true
       const bloomScale = shouldAnimate ? 1 + Math.sin(time * 8) * 0.2 : 1;
@@ -100,7 +100,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
     }
   }, [shouldAnimate]);
 
-  // Apply material changes to GLB model
+  // Apply material changes to GLB model - make lungs greener and more visible
   useEffect(() => {
     if (scene) {
       scene.traverse((child) => {
@@ -108,15 +108,15 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
           const mesh = child as THREE.Mesh;
           if (mesh.material && mesh.material instanceof THREE.MeshStandardMaterial) {
             const material = mesh.material;
-            // Make lungs greener based on fill level
-            const greenIntensity = 0.3 + fillLevel * 0.7;
-            material.color = new THREE.Color(`rgb(${Math.floor(255 * (1-greenIntensity))}, ${Math.floor(255 * greenIntensity)}, ${Math.floor(150 * greenIntensity)})`);
-            material.opacity = 0.8;
+            // Make lungs bright green and more visible
+            const greenIntensity = 0.5 + fillLevel * 0.5;
+            material.color = new THREE.Color(0.2, 0.8, 0.4); // Bright green color
+            material.opacity = 0.9; // More opaque
             material.transparent = true;
-            material.metalness = 0.1;
-            material.roughness = 0.4;
+            material.metalness = 0.2;
+            material.roughness = 0.3;
             material.emissive = new THREE.Color("#10b981");
-            material.emissiveIntensity = fillLevel * 0.3;
+            material.emissiveIntensity = fillLevel * 0.4 + 0.2; // Always some glow
           }
         }
       });
@@ -124,9 +124,9 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   }, [fillLevel, scene]);
 
   return (
-    <group ref={meshRef} position={[0, 0, 0]} scale={[2, 2, 2]}>
-      {/* Render GLB model with scaled size */}
-      <primitive object={scene.clone()} />
+    <group ref={meshRef} position={[0, 0, 0]} scale={[1.5, 1.5, 1.5]}>
+      {/* Render GLB model with scaled size - positioned to be clearly visible */}
+      <primitive object={scene.clone()} position={[0, 0, 0]} />
       
       {/* Add blooming particle effect when animating */}
       {shouldAnimate && (
@@ -177,38 +177,24 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
   
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-50 to-green-50 rounded-2xl overflow-hidden shadow-xl">
-      {/* Logos positioned side by side at the top with higher z-index */}
-      <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-30">
-        <img 
-          src="/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png" 
-          alt="IKSC Logo" 
-          className="h-16 w-auto object-contain drop-shadow-lg"
-        />
-        <img 
-          src="/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png" 
-          alt="KARE Logo" 
-          className="h-16 w-auto object-contain drop-shadow-lg"
-        />
-      </div>
-
       <Canvas
-        camera={{ position: [0, 0, 10], fov: 50 }}
+        camera={{ position: [0, 0, 8], fov: 60 }}
         className="w-full h-full"
         style={{ zIndex: 10 }}
         shadows
       >
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[5, 5, 5]} intensity={1.5} castShadow />
-        <pointLight position={[-5, -5, -5]} intensity={0.8} color="#10b981" />
-        <spotLight position={[0, 10, 0]} intensity={1.0} color="#ffffff" />
+        <ambientLight intensity={1.2} />
+        <directionalLight position={[5, 5, 5]} intensity={2} castShadow />
+        <pointLight position={[-5, -5, -5]} intensity={1.2} color="#10b981" />
+        <spotLight position={[0, 10, 0]} intensity={1.5} color="#ffffff" />
         
         <Environment preset="studio" />
         
         {/* Bottle containing the lungs */}
         <Bottle fillLevel={cappedFillLevel} />
         
-        {/* Lungs model */}
-        <group position={[0, -1, 0]}>
+        {/* Lungs model - positioned to be clearly visible inside bottle */}
+        <group position={[0, -0.5, 0]}>
           <LungsModel pledgeCount={pledgeCount} fillLevel={cappedFillLevel} shouldAnimate={shouldAnimate} />
         </group>
         
@@ -218,17 +204,11 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
           autoRotate={false}
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 1.2}
-          minDistance={5}
-          maxDistance={15}
+          minDistance={4}
+          maxDistance={12}
           zoomSpeed={1.2}
         />
       </Canvas>
-      
-      {/* IKSC KARE information positioned at top-middle */}
-      <div className="absolute top-24 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
-        <h3 className="text-2xl font-bold text-gray-800">IKSC KARE</h3>
-        <p className="text-lg font-semibold text-blue-600">Healthy Lungs Progress</p>
-      </div>
       
       {/* Health status comparison indicator */}
       <div className="absolute top-1/2 right-6 transform -translate-y-1/2 z-20 space-y-2">
