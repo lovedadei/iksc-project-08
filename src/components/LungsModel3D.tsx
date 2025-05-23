@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
@@ -6,42 +5,29 @@ import * as THREE from 'three';
 
 interface LungsModelProps {
   pledgeCount: number;
-  fillLevel: number; // 0 to 1 based on pledge count
+  fillLevel: number;
 }
 
 function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
   const meshRef = useRef<THREE.Group>(null);
-  const [useGLBModel, setUseGLBModel] = useState(true);
-  const [glbError, setGlbError] = useState(false);
   
-  // Try to load GLB file with error handling
-  let glbData = null;
-  try {
-    if (useGLBModel && !glbError) {
-      glbData = useGLTF('/lungs.glb');
-    }
-  } catch (error) {
-    console.log('GLB file not found, using procedural model');
-    setGlbError(true);
-  }
+  // Load GLB file - try the realistic_human_lungs.glb file that's in public
+  const { scene } = useGLTF('/realistic_human_lungs.glb');
   
   // Breathing animation
   useFrame((state) => {
     if (meshRef.current) {
       const time = state.clock.getElapsedTime();
-      const breatheScale = 1 + Math.sin(time * 0.5) * 0.1; // Slow breathing effect
+      const breatheScale = 1 + Math.sin(time * 0.5) * 0.1;
       meshRef.current.scale.setScalar(breatheScale);
-      
-      // Gentle rotation
       meshRef.current.rotation.y = Math.sin(time * 0.2) * 0.1;
     }
   });
 
-  // Apply material changes to GLB model if available
+  // Apply material changes to GLB model
   useEffect(() => {
-    if (glbData?.scene && !glbError) {
-      const clonedScene = glbData.scene.clone();
-      clonedScene.traverse((child) => {
+    if (scene) {
+      scene.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material) {
           const material = child.material as THREE.MeshStandardMaterial;
           if (material.color) {
@@ -52,45 +38,14 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
         }
       });
     }
-  }, [fillLevel, glbData, glbError]);
+  }, [fillLevel, scene]);
   
   return (
     <group ref={meshRef} position={[0, 0, 0]}>
-      {/* Render GLB model if available, otherwise use procedural model */}
-      {glbData?.scene && !glbError ? (
-        <primitive object={glbData.scene.clone()} />
-      ) : (
-        // Procedural lung model fallback
-        <>
-          {/* Left Lung */}
-          <mesh position={[-0.8, 0, 0]}>
-            <sphereGeometry args={[0.6, 16, 16]} />
-            <meshStandardMaterial 
-              color={new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`)}
-              opacity={0.8 + fillLevel * 0.2}
-              transparent
-            />
-          </mesh>
-          
-          {/* Right Lung */}
-          <mesh position={[0.8, 0, 0]}>
-            <sphereGeometry args={[0.6, 16, 16]} />
-            <meshStandardMaterial 
-              color={new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`)}
-              opacity={0.8 + fillLevel * 0.2}
-              transparent
-            />
-          </mesh>
-          
-          {/* Trachea */}
-          <mesh position={[0, 0.8, 0]}>
-            <cylinderGeometry args={[0.1, 0.1, 0.6, 8]} />
-            <meshStandardMaterial color={new THREE.Color("#4a5568")} />
-          </mesh>
-        </>
-      )}
+      {/* Render GLB model */}
+      <primitive object={scene.clone()} />
       
-      {/* Fill level indicator - particles/energy */}
+      {/* Fill level indicator particles */}
       {Array.from({ length: Math.floor(fillLevel * 50) }).map((_, i) => (
         <mesh 
           key={i} 
@@ -117,29 +72,23 @@ interface LungsModel3DProps {
 }
 
 const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount }) => {
-  // Calculate fill level: 0 at 0 pledges, 0.5 at 100 pledges, 1.0 at 200 pledges
   const fillLevel = Math.min(pledgeCount / 200, 1);
   const fillPercentage = Math.round(fillLevel * 100);
   
   return (
     <div className="relative w-full h-96 bg-gradient-to-b from-sky-100 to-green-100 rounded-2xl overflow-hidden shadow-lg">
-      {/* 3D Canvas */}
       <Canvas
         camera={{ position: [0, 0, 4], fov: 45 }}
         className="w-full h-full"
       >
-        {/* Lighting */}
         <ambientLight intensity={0.6} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} />
         <pointLight position={[-5, -5, -5]} intensity={0.4} color="#4ade80" />
         
-        {/* Environment for better lighting */}
         <Environment preset="studio" />
         
-        {/* Lungs Model */}
         <LungsModel pledgeCount={pledgeCount} fillLevel={fillLevel} />
         
-        {/* Camera Controls */}
         <OrbitControls
           enableZoom={false}
           enablePan={false}
