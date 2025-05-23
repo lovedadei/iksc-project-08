@@ -118,12 +118,32 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           return;
         }
 
-        // Create new pledge
+        // Generate referral code first
+        let referralCode = '';
+        try {
+          const { data: referralCodeData, error: referralCodeError } = await supabase
+            .rpc('generate_referral_code', { user_name: formData.fullName });
+
+          if (referralCodeError) {
+            console.error('Error generating referral code:', referralCodeError);
+            // Fallback to manual generation
+            referralCode = `${formData.fullName.substring(0, 4).toUpperCase()}${Math.floor(Math.random() * 1000)}`;
+          } else {
+            referralCode = referralCodeData;
+          }
+        } catch (error) {
+          console.error('Error calling generate_referral_code function:', error);
+          // Fallback to manual generation
+          referralCode = `${formData.fullName.substring(0, 4).toUpperCase()}${Math.floor(Math.random() * 1000)}`;
+        }
+
+        // Create new pledge with referral code
         const { data: newPledge, error: pledgeError } = await supabase
           .from('pledges')
           .insert({
             full_name: formData.fullName,
-            email: formData.email
+            email: formData.email,
+            referral_code: referralCode
           })
           .select()
           .single();
@@ -139,24 +159,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           return;
         }
 
-        // Generate referral code
-        const { data: referralCodeData, error: referralCodeError } = await supabase
-          .rpc('generate_referral_code', { user_name: formData.fullName });
-
-        if (referralCodeError) {
-          console.error('Error generating referral code:', referralCodeError);
-        }
-
-        // Update pledge with referral code
-        const referralCode = referralCodeData || `${formData.fullName.substring(0, 4).toUpperCase()}${Math.floor(Math.random() * 1000)}`;
-        const { error: updateError } = await supabase
-          .from('pledges')
-          .update({ referral_code: referralCode })
-          .eq('id', newPledge.id);
-
-        if (updateError) {
-          console.error('Error updating pledge with referral code:', updateError);
-        }
+        console.log('Pledge created successfully:', newPledge);
 
         // Handle referral if there's a referral code
         if (formData.referralCode) {
@@ -178,6 +181,8 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
             if (referralError) {
               console.error('Error creating referral:', referralError);
+            } else {
+              console.log('Referral created successfully');
             }
           }
         }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
@@ -30,24 +29,27 @@ const Index = () => {
       }
       
       if (count !== null) {
-        // Start with at least 100 pledges as requested
-        setPledgeCount(Math.max(count, 100));
+        setPledgeCount(count);
       }
     };
 
     fetchPledgeCount();
 
     // Subscribe to real-time changes on pledges table
-    const pledgesChannel = supabase
-      .channel('public:pledges')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pledges' }, 
-        (payload) => {
-          setPledgeCount(prevCount => prevCount + 1);
-        })
+    const channel = supabase
+      .channel('pledges-changes')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'pledges' 
+      }, (payload) => {
+        console.log('New pledge inserted:', payload);
+        setPledgeCount(prevCount => prevCount + 1);
+      })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(pledgesChannel);
+      supabase.removeChannel(channel);
     };
   }, []);
 
