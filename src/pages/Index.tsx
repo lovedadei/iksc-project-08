@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import PledgeForm from '../components/PledgeForm';
-import GrowingGarden from '../components/GrowingGarden';
+import LungsModel3D from '../components/LungsModel3D';
 import PledgeSuccessModal from '../components/PledgeSuccessModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -55,7 +55,7 @@ const Index = () => {
             <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
               Join the movement for healthier lungs and a tobacco-free future. 
               <br />
-              Every pledge helps our community garden grow stronger.
+              Every pledge helps our community reach maximum lung health.
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-white/80">
               <span className="bg-white/20 rounded-full px-4 py-2 text-sm font-medium">
@@ -109,18 +109,18 @@ const Index = () => {
             <PledgeForm onPledgeSubmit={handlePledgeSubmit} />
           </div>
 
-          {/* Growing Garden */}
+          {/* 3D Lungs Model */}
           <div className="space-y-6">
             <div className="text-center lg:text-left">
               <h2 className="text-3xl font-bold text-white mb-4">
-                Watch Our Garden Grow
+                Watch Our Lungs Heal
               </h2>
               <p className="text-white/90 text-lg">
-                Every pledge adds a new bloom to our healthy lungs garden. 
-                See the visual impact of our collective commitment!
+                Every pledge brings us closer to maximum lung health! 
+                See the progress towards our goal of 200 pledges.
               </p>
             </div>
-            <GrowingGarden pledgeCount={pledgeCount} />
+            <LungsModel3D pledgeCount={pledgeCount} />
           </div>
         </div>
       </div>
@@ -133,7 +133,7 @@ const Index = () => {
           </h2>
           <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
             Your commitment to a tobacco-free lifestyle inspires others and contributes to a healthier world. 
-            Together, we can create lasting change.
+            Together, we can achieve maximum lung health!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
