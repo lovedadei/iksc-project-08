@@ -131,6 +131,15 @@
   }
 }
 
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 .bloom-animation {
   animation: bloom 0.8s ease-out forwards;
 }
@@ -141,4 +150,13 @@
 
 .pulse-grow {
   animation: pulse-grow 2s ease-in-out infinite;
+}
+
+.breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* Custom transition durations */
+.duration-4000 {
+  transition-duration: 4000ms;
 }
