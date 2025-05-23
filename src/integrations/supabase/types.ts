@@ -9,13 +9,92 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      pledges: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          referral_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          referral_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          referral_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          points_awarded: number
+          referral_code: string
+          referred_pledge_id: string
+          referrer_pledge_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          referral_code: string
+          referred_pledge_id: string
+          referrer_pledge_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          referral_code?: string
+          referred_pledge_id?: string
+          referrer_pledge_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_pledge_id_fkey"
+            columns: ["referred_pledge_id"]
+            isOneToOne: false
+            referencedRelation: "pledges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_pledge_id_fkey"
+            columns: ["referrer_pledge_id"]
+            isOneToOne: false
+            referencedRelation: "pledges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_referral_code: {
+        Args: { user_name: string }
+        Returns: string
+      }
+      get_referral_stats: {
+        Args: { pledge_id: string }
+        Returns: {
+          total_referrals: number
+          total_points: number
+          referral_code: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

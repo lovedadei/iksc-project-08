@@ -1,36 +1,72 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
 import PledgeSuccessModal from '../components/PledgeSuccessModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const [pledgeCount, setPledgeCount] = useState(100); // Starting with 100 pledges as requested
+  const [pledgeCount, setPledgeCount] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [shouldAnimateLungs, setShouldAnimateLungs] = useState(false);
   const [currentPledge, setCurrentPledge] = useState({
     userName: '',
-    referralLink: ''
+    referralLink: '',
+    pledgeId: ''
   });
 
-  const handlePledgeSubmit = (pledgeData: {
+  // Fetch pledge count on component mount
+  useEffect(() => {
+    const fetchPledgeCount = async () => {
+      const { count, error } = await supabase
+        .from('pledges')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.error('Error fetching pledge count:', error);
+        return;
+      }
+      
+      if (count !== null) {
+        // Start with at least 100 pledges as requested
+        setPledgeCount(Math.max(count, 100));
+      }
+    };
+
+    fetchPledgeCount();
+
+    // Subscribe to real-time changes on pledges table
+    const pledgesChannel = supabase
+      .channel('public:pledges')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pledges' }, 
+        (payload) => {
+          setPledgeCount(prevCount => prevCount + 1);
+        })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(pledgesChannel);
+    };
+  }, []);
+
+  const handlePledgeSubmit = async (pledgeData: {
     fullName: string;
     email: string;
     referralCode: string;
+    pledgeId: string;
   }) => {
     console.log('Pledge submitted:', pledgeData);
     
-    // Simulate generating a unique referral code
-    const userCode = pledgeData.fullName.replace(/\s+/g, '').toUpperCase().slice(0, 6) + Math.floor(Math.random() * 100);
-    const referralLink = `${window.location.origin}?ref=${userCode}`;
+    const referralLink = `${window.location.origin}?ref=${pledgeData.referralCode}`;
     
     // Update state and trigger blooming animation
-    setPledgeCount(prev => prev + 1);
     setShouldAnimateLungs(true);
     setCurrentPledge({
       userName: pledgeData.fullName,
-      referralLink: referralLink
+      referralLink: referralLink,
+      pledgeId: pledgeData.pledgeId
     });
     setShowSuccessModal(true);
     
@@ -164,6 +200,7 @@ const Index = () => {
         onClose={() => setShowSuccessModal(false)}
         userName={currentPledge.userName}
         referralLink={currentPledge.referralLink}
+        pledgeId={currentPledge.pledgeId}
       />
     </div>
   );

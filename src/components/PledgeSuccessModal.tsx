@@ -1,22 +1,55 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { toast } from '@/components/ui/toaster';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PledgeSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   userName: string;
   referralLink: string;
+  pledgeId: string;
 }
 
 const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
   isOpen,
   onClose,
   userName,
-  referralLink
+  referralLink,
+  pledgeId
 }) => {
+  const [referralStats, setReferralStats] = useState({
+    totalReferrals: 0,
+    totalPoints: 0
+  });
+
+  // Fetch referral stats when modal opens
+  useEffect(() => {
+    if (isOpen && pledgeId) {
+      const fetchReferralStats = async () => {
+        const { data, error } = await supabase
+          .rpc('get_referral_stats', { pledge_id: pledgeId });
+        
+        if (error) {
+          console.error('Error fetching referral stats:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          setReferralStats({
+            totalReferrals: data[0].total_referrals || 0,
+            totalPoints: data[0].total_points || 0
+          });
+        }
+      };
+
+      fetchReferralStats();
+    }
+  }, [isOpen, pledgeId]);
+
   const downloadBloomGraphic = async () => {
     // Create a canvas element to generate the bloom graphic
     const canvas = document.createElement('canvas');
@@ -129,7 +162,10 @@ const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
-    // You could add a toast notification here
+    toast({
+      title: "Referral link copied!",
+      description: "Share this with friends to earn Bloom Points.",
+    });
   };
 
   return (
@@ -177,6 +213,25 @@ const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
               </ul>
             </CardContent>
           </Card>
+
+          {/* Referral Stats Card */}
+          {pledgeId && (
+            <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
+              <CardContent className="p-4">
+                <h4 className="font-semibold text-gray-800 mb-2">🏆 Your Referral Impact:</h4>
+                <div className="flex justify-center gap-8">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-pink-600">{referralStats.totalReferrals}</div>
+                    <div className="text-sm text-gray-600">Friends Referred</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">{referralStats.totalPoints}</div>
+                    <div className="text-sm text-gray-600">Bloom Points</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button 

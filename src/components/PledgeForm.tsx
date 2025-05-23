@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/toaster';
 
 interface PledgeFormProps {
   onPledgeSubmit: (pledgeData: {
     fullName: string;
     email: string;
     referralCode: string;
+    pledgeId: string;
   }) => void;
 }
 
@@ -22,6 +25,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitEnabled, setIsSubmitEnabled] = useState(false);
   const [countdown, setCountdown] = useState(30);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle 30-second wait timer
   useEffect(() => {
@@ -80,13 +84,123 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isSubmitEnabled) return;
+    if (!isSubmitEnabled || isSubmitting) return;
     
     if (validateForm()) {
-      onPledgeSubmit(formData);
+      setIsSubmitting(true);
+      
+      try {
+        // Check if email already exists
+        const { data: existingPledges } = await supabase
+          .from('pledges')
+          .select('id, referral_code')
+          .eq('email', formData.email)
+          .maybeSingle();
+
+        if (existingPledges) {
+          // User already pledged
+          toast({
+            title: "You've already made a pledge!",
+            description: "Thank you for your continued commitment to healthy lungs.",
+          });
+          
+          // Still trigger success with existing pledge data
+          onPledgeSubmit({
+            fullName: formData.fullName,
+            email: formData.email,
+            referralCode: existingPledges.referral_code || '',
+            pledgeId: existingPledges.id
+          });
+          
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Create new pledge
+        const { data: newPledge, error: pledgeError } = await supabase
+          .from('pledges')
+          .insert({
+            full_name: formData.fullName,
+            email: formData.email
+          })
+          .select()
+          .single();
+
+        if (pledgeError) {
+          console.error('Error creating pledge:', pledgeError);
+          toast({
+            title: "Error creating pledge",
+            description: "Please try again later.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Generate referral code
+        const { data: referralCodeData, error: referralCodeError } = await supabase
+          .rpc('generate_referral_code', { user_name: formData.fullName });
+
+        if (referralCodeError) {
+          console.error('Error generating referral code:', referralCodeError);
+        }
+
+        // Update pledge with referral code
+        const referralCode = referralCodeData || `${formData.fullName.substring(0, 4).toUpperCase()}${Math.floor(Math.random() * 1000)}`;
+        const { error: updateError } = await supabase
+          .from('pledges')
+          .update({ referral_code: referralCode })
+          .eq('id', newPledge.id);
+
+        if (updateError) {
+          console.error('Error updating pledge with referral code:', updateError);
+        }
+
+        // Handle referral if there's a referral code
+        if (formData.referralCode) {
+          const { data: referrerPledge } = await supabase
+            .from('pledges')
+            .select('id')
+            .eq('referral_code', formData.referralCode)
+            .maybeSingle();
+
+          if (referrerPledge) {
+            // Add referral record
+            const { error: referralError } = await supabase
+              .from('referrals')
+              .insert({
+                referrer_pledge_id: referrerPledge.id,
+                referred_pledge_id: newPledge.id,
+                referral_code: formData.referralCode
+              });
+
+            if (referralError) {
+              console.error('Error creating referral:', referralError);
+            }
+          }
+        }
+
+        // Call onPledgeSubmit with the new pledge data
+        onPledgeSubmit({
+          fullName: formData.fullName,
+          email: formData.email,
+          referralCode: referralCode,
+          pledgeId: newPledge.id
+        });
+        
+      } catch (error) {
+        console.error('Error during pledge submission:', error);
+        toast({
+          title: "Error submitting pledge",
+          description: "Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -98,7 +212,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl bg-white/95 backdrop-blur-sm border-0">
+    <Card className="w-full max-w-md mx-auto shadow-xl bg-white/95 backdrop-blur-sm border-0" id="pledge-form">
       <CardHeader className="text-center bg-bloom-gradient rounded-t-lg">
         <CardTitle className="text-2xl font-bold text-white">
           Take the Pledge
@@ -163,17 +277,19 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
           <Button
             type="submit"
-            disabled={!isSubmitEnabled}
+            disabled={!isSubmitEnabled || isSubmitting}
             className={`w-full py-3 text-lg font-semibold transition-all duration-300 ${
-              isSubmitEnabled
+              isSubmitEnabled && !isSubmitting
                 ? 'bg-nature-green hover:bg-nature-green/90 text-white'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {isSubmitEnabled ? (
-              '🌸 Make My Pledge'
-            ) : (
+            {isSubmitting ? (
+              'Submitting...'
+            ) : !isSubmitEnabled ? (
               `Wait ${countdown}s to submit`
+            ) : (
+              '🌸 Make My Pledge'
             )}
           </Button>
         </form>
