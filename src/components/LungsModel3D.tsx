@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
@@ -29,8 +28,8 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
   useEffect(() => {
     if (scene) {
       scene.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material) {
-          const material = child.material as THREE.MeshStandardMaterial;
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          const material = child.material;
           if (material.color) {
             // Enhanced color progression from red (unhealthy) to vibrant green (healthy)
             const hue = fillLevel < 0.25 ? 0 : 120 * fillLevel; // Red to green progression
