@@ -1,7 +1,6 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface LungsModelProps {
@@ -11,8 +10,10 @@ interface LungsModelProps {
 
 function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
   const meshRef = useRef<THREE.Group>(null);
-  const [breathePhase, setBreathePhase] = useState(0);
-
+  
+  // Load your GLB file - replace '/path/to/your/lungs.glb' with your actual file path
+  const { scene } = useGLTF('/lungs.glb'); // Put your GLB file in the public folder
+  
   // Breathing animation
   useFrame((state) => {
     if (meshRef.current) {
@@ -25,36 +26,27 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
     }
   });
 
-  // For now, we'll create a procedural lungs model since we don't have a GLB file
-  // In production, you would replace this with: const { scene } = useGLTF('/path/to/lungs.glb');
+  // Clone the scene to avoid sharing between instances
+  const clonedScene = scene.clone();
+  
+  // Apply material changes based on fill level
+  useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        // Modify material properties based on fillLevel
+        const material = child.material as THREE.MeshStandardMaterial;
+        if (material.color) {
+          material.color = new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`);
+          material.opacity = 0.8 + fillLevel * 0.2;
+          material.transparent = true;
+        }
+      }
+    });
+  }, [fillLevel, clonedScene]);
   
   return (
     <group ref={meshRef} position={[0, 0, 0]}>
-      {/* Left Lung */}
-      <mesh position={[-0.8, 0, 0]}>
-        <sphereGeometry args={[0.6, 16, 16]} />
-        <meshStandardMaterial 
-          color={new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`)}
-          opacity={0.8 + fillLevel * 0.2}
-          transparent
-        />
-      </mesh>
-      
-      {/* Right Lung */}
-      <mesh position={[0.8, 0, 0]}>
-        <sphereGeometry args={[0.6, 16, 16]} />
-        <meshStandardMaterial 
-          color={new THREE.Color(`hsl(${120 + fillLevel * 60}, 70%, ${40 + fillLevel * 20}%)`)}
-          opacity={0.8 + fillLevel * 0.2}
-          transparent
-        />
-      </mesh>
-      
-      {/* Trachea */}
-      <mesh position={[0, 0.8, 0]}>
-        <cylinderGeometry args={[0.1, 0.1, 0.6, 8]} />
-        <meshStandardMaterial color={new THREE.Color("#4a5568")} />
-      </mesh>
+      <primitive object={clonedScene} />
       
       {/* Fill level indicator - particles/energy */}
       {Array.from({ length: Math.floor(fillLevel * 50) }).map((_, i) => (
