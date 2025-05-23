@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 const Index = () => {
   const [pledgeCount, setPledgeCount] = useState(100); // Starting with 100 pledges as requested
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [shouldAnimateLungs, setShouldAnimateLungs] = useState(false);
   const [currentPledge, setCurrentPledge] = useState({
     userName: '',
     referralLink: ''
@@ -24,13 +25,19 @@ const Index = () => {
     const userCode = pledgeData.fullName.replace(/\s+/g, '').toUpperCase().slice(0, 6) + Math.floor(Math.random() * 100);
     const referralLink = `${window.location.origin}?ref=${userCode}`;
     
-    // Update state
+    // Update state and trigger blooming animation
     setPledgeCount(prev => prev + 1);
+    setShouldAnimateLungs(true);
     setCurrentPledge({
       userName: pledgeData.fullName,
       referralLink: referralLink
     });
     setShowSuccessModal(true);
+    
+    // Stop animation after 3 seconds
+    setTimeout(() => {
+      setShouldAnimateLungs(false);
+    }, 3000);
   };
 
   const stats = [
@@ -108,7 +115,7 @@ const Index = () => {
             <PledgeForm onPledgeSubmit={handlePledgeSubmit} />
           </div>
 
-          {/* 3D Lungs Model */}
+          {/* 3D Lungs Model with Animation */}
           <div className="space-y-6">
             <div className="text-center lg:text-left">
               <h2 className="text-3xl font-bold text-white mb-4">
@@ -119,7 +126,7 @@ const Index = () => {
                 See the progress towards our goal of 200 pledges.
               </p>
             </div>
-            <LungsModel3D pledgeCount={pledgeCount} />
+            <LungsModel3D pledgeCount={pledgeCount} shouldAnimate={shouldAnimateLungs} />
           </div>
         </div>
       </div>

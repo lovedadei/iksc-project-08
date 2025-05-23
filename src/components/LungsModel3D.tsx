@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
@@ -7,24 +6,50 @@ import * as THREE from 'three';
 interface LungsModelProps {
   pledgeCount: number;
   fillLevel: number;
+  shouldAnimate: boolean;
 }
 
-function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
+function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) {
   const meshRef = useRef<THREE.Group>(null);
   const fillRef = useRef<THREE.Mesh>(null);
+  const [animationScale, setAnimationScale] = useState(1);
   
   // Load GLB file
   const { scene } = useGLTF('/realistic_human_lungs.glb');
   
-  // Breathing animation with larger scale
+  // Breathing animation with blooming effect
   useFrame((state) => {
     if (meshRef.current) {
       const time = state.clock.getElapsedTime();
-      const breatheScale = 2.0 + Math.sin(time * 0.5) * 0.1; // Larger base scale with subtle breathing
-      meshRef.current.scale.setScalar(breatheScale);
-      meshRef.current.rotation.y = Math.sin(time * 0.2) * 0.05; // Reduced rotation for better visibility
+      const breatheScale = 2.0 + Math.sin(time * 0.5) * 0.1;
+      
+      // Apply blooming animation when shouldAnimate is true
+      const bloomScale = shouldAnimate ? 1 + Math.sin(time * 8) * 0.2 : 1;
+      
+      meshRef.current.scale.setScalar(breatheScale * bloomScale * animationScale);
+      meshRef.current.rotation.y = Math.sin(time * 0.2) * 0.05;
+    }
+    
+    // Animate fill with blooming effect
+    if (fillRef.current && shouldAnimate) {
+      const time = state.clock.getElapsedTime();
+      const bloomPulse = 1 + Math.sin(time * 6) * 0.3;
+      fillRef.current.scale.set(bloomPulse, 1, bloomPulse);
+    } else if (fillRef.current) {
+      fillRef.current.scale.set(1, 1, 1);
     }
   });
+
+  // Trigger blooming animation
+  useEffect(() => {
+    if (shouldAnimate) {
+      setAnimationScale(1.3);
+      const timer = setTimeout(() => {
+        setAnimationScale(1);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldAnimate]);
 
   // Apply material changes to GLB model
   useEffect(() => {
@@ -35,12 +60,9 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
           if (mesh.material && mesh.material instanceof THREE.MeshStandardMaterial) {
             const material = mesh.material;
             if (material.color) {
-              // Enhanced color progression from red (unhealthy) to vibrant green (healthy)
-              const hue = fillLevel < 0.25 ? 0 : 120 * fillLevel;
-              const saturation = 70 + fillLevel * 30;
-              const lightness = 35 + fillLevel * 30;
-              material.color = new THREE.Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-              material.opacity = 0.3; // More transparent to show inner fill
+              // Keep lungs in natural pinkish color for contrast
+              material.color = new THREE.Color('#ffb3ba');
+              material.opacity = 0.4; // More transparent to show green fill
               material.transparent = true;
               material.metalness = 0.1;
               material.roughness = 0.4;
@@ -51,38 +73,61 @@ function LungsModel({ pledgeCount, fillLevel }: LungsModelProps) {
     }
   }, [fillLevel, scene]);
 
-  // Create inner fill effect that fills from bottom to top inside the lungs
-  const fillHeight = fillLevel * 2.5; // Scale fill height to fit inside lungs
-  const fillColor = fillLevel < 0.25 ? "#ef4444" : fillLevel < 0.5 ? "#f59e0b" : fillLevel < 0.75 ? "#f97316" : "#10b981";
+  // Create green fill effect that fills from bottom to top inside the lungs
+  const fillHeight = fillLevel * 2.5;
+  const fillColor = "#10b981"; // Always green color
   
   return (
     <group ref={meshRef} position={[0, 0, 0]}>
       {/* Render GLB model with larger scale and transparency */}
       <primitive object={scene.clone()} scale={[3, 3, 3]} />
       
-      {/* Inner fill effect - positioned inside the lungs, filling from bottom up */}
+      {/* Green fill effect - positioned inside the lungs, filling from bottom up */}
       <mesh 
         ref={fillRef}
-        position={[0, -1.2 + fillHeight/2, 0]} // Position fill inside lungs from bottom up
+        position={[0, -1.2 + fillHeight/2, 0]}
       >
-        <boxGeometry args={[1.8, fillHeight, 1.2]} /> {/* Smaller geometry to fit inside lungs */}
+        <boxGeometry args={[1.8, fillHeight, 1.2]} />
         <meshStandardMaterial 
           color={fillColor}
           transparent
           opacity={0.8}
           emissive={new THREE.Color(fillColor)}
-          emissiveIntensity={0.3}
+          emissiveIntensity={shouldAnimate ? 0.6 : 0.3}
         />
       </mesh>
+      
+      {/* Add blooming particle effect when animating */}
+      {shouldAnimate && (
+        <>
+          {[...Array(6)].map((_, i) => (
+            <mesh key={i} position={[
+              Math.cos(i * Math.PI / 3) * 2,
+              Math.sin(i * Math.PI / 3) * 1.5,
+              Math.sin(i * Math.PI / 3) * 0.5
+            ]}>
+              <sphereGeometry args={[0.1]} />
+              <meshStandardMaterial 
+                color="#10b981"
+                emissive="#10b981"
+                emissiveIntensity={0.8}
+                transparent
+                opacity={0.7}
+              />
+            </mesh>
+          ))}
+        </>
+      )}
     </group>
   );
 }
 
 interface LungsModel3DProps {
   pledgeCount: number;
+  shouldAnimate?: boolean;
 }
 
-const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount }) => {
+const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate = false }) => {
   // Adjusted fill level calculation: 100 pledges = 50%, 200 pledges = 100%
   const fillLevel = pledgeCount < 100 ? (pledgeCount / 100) * 0.5 : 0.5 + ((pledgeCount - 100) / 100) * 0.5;
   const cappedFillLevel = Math.min(fillLevel, 1);
@@ -111,12 +156,12 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount }) => {
       >
         <ambientLight intensity={0.8} />
         <directionalLight position={[5, 5, 5]} intensity={1.5} />
-        <pointLight position={[-5, -5, -5]} intensity={0.8} color="#4ade80" />
+        <pointLight position={[-5, -5, -5]} intensity={0.8} color="#10b981" />
         <spotLight position={[0, 10, 0]} intensity={1.0} color="#ffffff" />
         
         <Environment preset="studio" />
         
-        <LungsModel pledgeCount={pledgeCount} fillLevel={cappedFillLevel} />
+        <LungsModel pledgeCount={pledgeCount} fillLevel={cappedFillLevel} shouldAnimate={shouldAnimate} />
         
         <OrbitControls
           enableZoom={true}
@@ -142,11 +187,7 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount }) => {
         <p className="text-lg text-gray-600">{fillPercentage}% Filled</p>
         <div className="w-48 bg-gray-200 rounded-full h-3 mt-2">
           <div 
-            className={`h-3 rounded-full transition-all duration-1000 ease-out ${
-              fillLevel < 0.25 ? 'bg-red-500' : 
-              fillLevel < 0.5 ? 'bg-yellow-500' : 
-              fillLevel < 0.75 ? 'bg-orange-500' : 'bg-green-500'
-            }`}
+            className="h-3 rounded-full transition-all duration-1000 ease-out bg-green-500"
             style={{ width: `${fillPercentage}%` }}
           ></div>
         </div>
