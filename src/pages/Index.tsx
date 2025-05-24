@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
@@ -30,22 +29,11 @@ const Index = () => {
       }
       
       if (count !== null) {
-        console.log('Initial pledge count from database:', count);
         setPledgeCount(count);
       }
     };
 
     fetchPledgeCount();
-
-    // Enable realtime for pledges table
-    supabase.rpc('enable_realtime_for_table', { table_name: 'pledges' })
-      .then(response => console.log('Realtime enabled for pledges:', response))
-      .catch(error => console.error('Error enabling realtime:', error));
-    
-    // Enable realtime for referrals table
-    supabase.rpc('enable_realtime_for_table', { table_name: 'referrals' })
-      .then(response => console.log('Realtime enabled for referrals:', response))
-      .catch(error => console.error('Error enabling realtime:', error));
 
     // Subscribe to real-time changes on pledges table
     const channel = supabase
