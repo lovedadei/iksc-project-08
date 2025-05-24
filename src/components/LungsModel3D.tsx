@@ -1,7 +1,9 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
+import { Button } from '@/components/ui/button';
 
 interface LungsModelProps {
   pledgeCount: number;
@@ -128,10 +130,25 @@ interface LungsModel3DProps {
 }
 
 const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate = false }) => {
-  // Adjusted fill level calculation: 100 pledges = 50%, 200 pledges = 100%
-  const fillLevel = pledgeCount < 100 ? (pledgeCount / 100) * 0.5 : 0.5 + ((pledgeCount - 100) / 100) * 0.5;
+  const [testFillLevel, setTestFillLevel] = useState<number | null>(null);
+  
+  // Use test fill level if set, otherwise calculate based on pledge count
+  const fillLevel = testFillLevel !== null ? testFillLevel : 
+    pledgeCount < 100 ? (pledgeCount / 100) * 0.5 : 0.5 + ((pledgeCount - 100) / 100) * 0.5;
   const cappedFillLevel = Math.min(fillLevel, 1);
   const fillPercentage = Math.round(cappedFillLevel * 100);
+  
+  const handleShow100Percent = () => {
+    setTestFillLevel(1);
+    // Reset to normal after 5 seconds
+    setTimeout(() => {
+      setTestFillLevel(null);
+    }, 5000);
+  };
+
+  const handleResetFill = () => {
+    setTestFillLevel(null);
+  };
   
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-50 to-green-50 rounded-2xl overflow-hidden shadow-xl">
@@ -190,6 +207,24 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
             className="h-3 rounded-full transition-all duration-1000 ease-out bg-green-500"
             style={{ width: `${fillPercentage}%` }}
           ></div>
+        </div>
+        
+        {/* Test buttons */}
+        <div className="flex gap-2 mt-3 justify-center">
+          <Button 
+            onClick={handleShow100Percent}
+            className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1"
+            size="sm"
+          >
+            Show 100%
+          </Button>
+          <Button 
+            onClick={handleResetFill}
+            className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-3 py-1"
+            size="sm"
+          >
+            Reset
+          </Button>
         </div>
       </div>
       
