@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
@@ -35,6 +36,16 @@ const Index = () => {
     };
 
     fetchPledgeCount();
+
+    // Enable realtime for pledges table
+    supabase.rpc('enable_realtime_for_table', { table_name: 'pledges' })
+      .then(response => console.log('Realtime enabled for pledges:', response))
+      .catch(error => console.error('Error enabling realtime:', error));
+    
+    // Enable realtime for referrals table
+    supabase.rpc('enable_realtime_for_table', { table_name: 'referrals' })
+      .then(response => console.log('Realtime enabled for referrals:', response))
+      .catch(error => console.error('Error enabling realtime:', error));
 
     // Subscribe to real-time changes on pledges table
     const channel = supabase
@@ -91,30 +102,12 @@ const Index = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-        
-        {/* Logos positioned at top */}
-        <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-20">
-          <img 
-            src="/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png" 
-            alt="IKSC Logo" 
-            className="h-20 w-auto object-contain drop-shadow-lg"
-          />
-          <img 
-            src="/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png" 
-            alt="KARE Logo" 
-            className="h-20 w-auto object-contain drop-shadow-lg"
-          />
-        </div>
-        
-        <div className="relative container mx-auto px-4 py-16 pt-32">
+        <div className="relative container mx-auto px-4 py-16">
           <div className="text-center space-y-6 max-w-4xl mx-auto">
             <div className="text-6xl mb-4">🌺</div>
             <h1 className="text-5xl md:text-6xl font-bold text-white drop-shadow-lg">
               Bloom for Lungs
             </h1>
-            <h2 className="text-2xl md:text-3xl font-semibold text-white/95 drop-shadow-lg">
-              IKSC KARE Initiative
-            </h2>
             <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
               Join the movement for healthier lungs and a tobacco-free future. 
               <br />

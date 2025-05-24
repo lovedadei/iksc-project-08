@@ -10,6 +10,54 @@ interface LungsModelProps {
   shouldAnimate: boolean;
 }
 
+// Bottle component that contains the lungs
+function Bottle({ fillLevel }: { fillLevel: number }) {
+  const bottleRef = useRef<THREE.Group>(null);
+  
+  // Create bottle shape
+  const bottleHeight = 5;
+  const bottleRadius = 2;
+  
+  // Water level based on fill percentage
+  const waterHeight = fillLevel * bottleHeight;
+  
+  return (
+    <group ref={bottleRef}>
+      {/* Bottle glass - transparent cylinder */}
+      <mesh position={[0, 0, 0]} receiveShadow>
+        <cylinderGeometry args={[bottleRadius, bottleRadius, bottleHeight, 32]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transparent={true}
+          opacity={0.3}
+          thickness={0.5}
+          roughness={0}
+          metalness={0.1}
+          transmission={0.95}
+        />
+      </mesh>
+      
+      {/* Bottle cap */}
+      <mesh position={[0, bottleHeight/2 + 0.3, 0]}>
+        <cylinderGeometry args={[bottleRadius * 0.7, bottleRadius * 0.7, 0.6, 32]} />
+        <meshStandardMaterial color="#555555" />
+      </mesh>
+      
+      {/* Water inside bottle */}
+      <mesh position={[0, -bottleHeight/2 + waterHeight/2, 0]}>
+        <cylinderGeometry args={[bottleRadius * 0.95, bottleRadius * 0.95, waterHeight, 32]} />
+        <meshStandardMaterial
+          color="#10b981"
+          transparent={true}
+          opacity={0.5}
+          emissive="#10b981"
+          emissiveIntensity={0.2}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) {
   const meshRef = useRef<THREE.Group>(null);
   const fillRef = useRef<THREE.Mesh>(null);
@@ -22,19 +70,19 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   useFrame((state) => {
     if (meshRef.current) {
       const time = state.clock.getElapsedTime();
-      const breatheScale = 1.2 + Math.sin(time * 0.5) * 0.05;
+      const breatheScale = 1.5 + Math.sin(time * 0.5) * 0.05;
       
       // Apply blooming animation when shouldAnimate is true
-      const bloomScale = shouldAnimate ? 1 + Math.sin(time * 8) * 0.3 : 1;
+      const bloomScale = shouldAnimate ? 1 + Math.sin(time * 8) * 0.2 : 1;
       
       meshRef.current.scale.setScalar(breatheScale * bloomScale * animationScale);
-      meshRef.current.rotation.y = Math.sin(time * 0.2) * 0.1;
+      meshRef.current.rotation.y = Math.sin(time * 0.2) * 0.05;
     }
     
     // Animate fill with blooming effect
     if (fillRef.current && shouldAnimate) {
       const time = state.clock.getElapsedTime();
-      const bloomPulse = 1 + Math.sin(time * 6) * 0.4;
+      const bloomPulse = 1 + Math.sin(time * 6) * 0.3;
       fillRef.current.scale.set(bloomPulse, 1, bloomPulse);
     } else if (fillRef.current) {
       fillRef.current.scale.set(1, 1, 1);
@@ -44,7 +92,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   // Trigger blooming animation
   useEffect(() => {
     if (shouldAnimate) {
-      setAnimationScale(1.5);
+      setAnimationScale(1.3);
       const timer = setTimeout(() => {
         setAnimationScale(1);
       }, 2000);
@@ -52,7 +100,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
     }
   }, [shouldAnimate]);
 
-  // Apply material changes to GLB model - make lungs very bright and visible
+  // Apply material changes to GLB model
   useEffect(() => {
     if (scene) {
       scene.traverse((child) => {
@@ -60,14 +108,15 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
           const mesh = child as THREE.Mesh;
           if (mesh.material && mesh.material instanceof THREE.MeshStandardMaterial) {
             const material = mesh.material;
-            // Make lungs extremely bright green and visible
-            material.color = new THREE.Color(0.0, 1.0, 0.2); // Very bright green
-            material.opacity = 1.0; // Fully opaque
-            material.transparent = false;
-            material.metalness = 0.0;
-            material.roughness = 0.1;
-            material.emissive = new THREE.Color("#00ff44");
-            material.emissiveIntensity = fillLevel * 0.8 + 0.5; // Very strong glow
+            // Make lungs greener based on fill level
+            const greenIntensity = 0.3 + fillLevel * 0.7;
+            material.color = new THREE.Color(`rgb(${Math.floor(255 * (1-greenIntensity))}, ${Math.floor(255 * greenIntensity)}, ${Math.floor(150 * greenIntensity)})`);
+            material.opacity = 0.8;
+            material.transparent = true;
+            material.metalness = 0.1;
+            material.roughness = 0.4;
+            material.emissive = new THREE.Color("#10b981");
+            material.emissiveIntensity = fillLevel * 0.3;
           }
         }
       });
@@ -75,26 +124,26 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   }, [fillLevel, scene]);
 
   return (
-    <group ref={meshRef} position={[0, 0, 0]} scale={[6.0, 6.0, 6.0]}>
-      {/* Render GLB model with much larger size */}
-      <primitive object={scene.clone()} position={[0, 0, 0]} />
+    <group ref={meshRef} position={[0, 0, 0]} scale={[2, 2, 2]}>
+      {/* Render GLB model with scaled size */}
+      <primitive object={scene.clone()} />
       
       {/* Add blooming particle effect when animating */}
       {shouldAnimate && (
         <>
-          {[...Array(8)].map((_, i) => (
+          {[...Array(6)].map((_, i) => (
             <mesh key={i} position={[
-              Math.cos(i * Math.PI / 4) * 2.0,
-              Math.sin(i * Math.PI / 4) * 1.5,
-              Math.sin(i * Math.PI / 4) * 0.8
+              Math.cos(i * Math.PI / 3) * 1.5,
+              Math.sin(i * Math.PI / 3) * 1.2,
+              Math.sin(i * Math.PI / 3) * 0.5
             ]}>
-              <sphereGeometry args={[0.15]} />
+              <sphereGeometry args={[0.1]} />
               <meshStandardMaterial 
-                color="#00ff44"
-                emissive="#00ff44"
-                emissiveIntensity={1.0}
+                color="#10b981"
+                emissive="#10b981"
+                emissiveIntensity={0.8}
                 transparent
-                opacity={0.8}
+                opacity={0.7}
               />
             </mesh>
           ))}
@@ -110,8 +159,6 @@ interface LungsModel3DProps {
 }
 
 const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate = false }) => {
-  const [activeHealth, setActiveHealth] = useState<string | null>(null);
-  
   // Adjusted fill level calculation: 100 pledges = 50%, 200 pledges = 100%
   const fillLevel = pledgeCount < 100 ? (pledgeCount / 100) * 0.5 : 0.5 + ((pledgeCount - 100) / 100) * 0.5;
   const cappedFillLevel = Math.min(fillLevel, 1);
@@ -127,50 +174,41 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
   };
   
   const healthStatus = getHealthStatus(cappedFillLevel);
-
-  const handleHealthClick = (healthType: string) => {
-    setActiveHealth(healthType);
-    setTimeout(() => {
-      setActiveHealth(null);
-    }, 1000); // Show for 1 second
-  };
-
-  // Get fill percentage for each health level
-  const getHealthFillPercentage = (healthType: string) => {
-    switch (healthType) {
-      case 'atrisk':
-        return cappedFillLevel >= 0.25 ? 100 : (cappedFillLevel / 0.25) * 100;
-      case 'good':
-        return cappedFillLevel >= 0.5 ? 100 : Math.max(0, ((cappedFillLevel - 0.25) / 0.25) * 100);
-      case 'better':
-        return cappedFillLevel >= 0.75 ? 100 : Math.max(0, ((cappedFillLevel - 0.5) / 0.25) * 100);
-      case 'excellent':
-        return cappedFillLevel >= 1 ? 100 : Math.max(0, ((cappedFillLevel - 0.75) / 0.25) * 100);
-      case 'maximum':
-        return cappedFillLevel >= 1 ? 100 : 0;
-      default:
-        return 0;
-    }
-  };
   
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-50 to-green-50 rounded-2xl overflow-hidden shadow-xl">
+      {/* Logos positioned side by side at the top with higher z-index */}
+      <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-30">
+        <img 
+          src="/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png" 
+          alt="IKSC Logo" 
+          className="h-16 w-auto object-contain drop-shadow-lg"
+        />
+        <img 
+          src="/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png" 
+          alt="KARE Logo" 
+          className="h-16 w-auto object-contain drop-shadow-lg"
+        />
+      </div>
+
       <Canvas
-        camera={{ position: [0, 0, 10], fov: 60 }}
+        camera={{ position: [0, 0, 10], fov: 50 }}
         className="w-full h-full"
         style={{ zIndex: 10 }}
         shadows
       >
-        <ambientLight intensity={2.0} />
-        <directionalLight position={[5, 5, 5]} intensity={3.0} castShadow />
-        <pointLight position={[-5, -5, -5]} intensity={2.0} color="#00ff44" />
-        <pointLight position={[5, -5, 5]} intensity={2.0} color="#00ff44" />
-        <spotLight position={[0, 10, 0]} intensity={3.0} color="#ffffff" />
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[5, 5, 5]} intensity={1.5} castShadow />
+        <pointLight position={[-5, -5, -5]} intensity={0.8} color="#10b981" />
+        <spotLight position={[0, 10, 0]} intensity={1.0} color="#ffffff" />
         
         <Environment preset="studio" />
         
-        {/* Lungs model - much larger and more visible */}
-        <group position={[0, 0, 0]}>
+        {/* Bottle containing the lungs */}
+        <Bottle fillLevel={cappedFillLevel} />
+        
+        {/* Lungs model */}
+        <group position={[0, -1, 0]}>
           <LungsModel pledgeCount={pledgeCount} fillLevel={cappedFillLevel} shouldAnimate={shouldAnimate} />
         </group>
         
@@ -180,14 +218,39 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
           autoRotate={false}
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 1.2}
-          minDistance={6}
+          minDistance={5}
           maxDistance={15}
           zoomSpeed={1.2}
         />
       </Canvas>
       
+      {/* IKSC KARE information positioned at top-middle */}
+      <div className="absolute top-24 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
+        <h3 className="text-2xl font-bold text-gray-800">IKSC KARE</h3>
+        <p className="text-lg font-semibold text-blue-600">Healthy Lungs Progress</p>
+      </div>
+      
+      {/* Health status comparison indicator */}
+      <div className="absolute top-1/2 right-6 transform -translate-y-1/2 z-20 space-y-2">
+        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel >= 1 ? "animate-pulse" : ""} ${fillLevel >= 1 ? "bg-emerald-100 border-2 border-emerald-200 text-emerald-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+          Maximum Health
+        </div>
+        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel >= 0.75 && fillLevel < 1 ? "animate-pulse" : ""} ${fillLevel >= 0.75 ? "bg-green-100 border-2 border-green-200 text-green-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+          Excellent
+        </div>
+        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel >= 0.5 && fillLevel < 0.75 ? "animate-pulse" : ""} ${fillLevel >= 0.5 ? "bg-orange-100 border-2 border-orange-200 text-orange-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+          Better
+        </div>
+        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel >= 0.25 && fillLevel < 0.5 ? "animate-pulse" : ""} ${fillLevel >= 0.25 ? "bg-yellow-100 border-2 border-yellow-200 text-yellow-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+          Good
+        </div>
+        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel < 0.25 ? "animate-pulse" : ""} ${fillLevel < 0.25 ? "bg-red-100 border-2 border-red-200 text-red-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+          At Risk
+        </div>
+      </div>
+      
       {/* Pledge count and percentage */}
-      <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
         <p className="text-2xl font-bold text-gray-800">{pledgeCount} Pledges</p>
         <p className="text-lg text-gray-600">{fillPercentage}% Filled</p>
         <div className="w-48 bg-gray-200 rounded-full h-3 mt-2">
@@ -196,90 +259,6 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
             style={{ width: `${fillPercentage}%` }}
           ></div>
         </div>
-      </div>
-
-      {/* Interactive health status comparison indicators - moved above pledge count */}
-      <div className="absolute bottom-48 left-1/2 transform -translate-x-1/2 z-20 flex flex-wrap justify-center gap-2 max-w-md">
-        <button
-          onClick={() => handleHealthClick('atrisk')}
-          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
-            activeHealth === 'atrisk' ? 'scale-110 shadow-lg' : ''
-          } ${
-            fillLevel < 0.25 || activeHealth === 'atrisk'
-              ? "bg-red-100 border-2 border-red-200 text-red-800" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          <div className="relative z-10">At Risk</div>
-          <div 
-            className="absolute bottom-0 left-0 h-1 bg-red-500 transition-all duration-1000 ease-out"
-            style={{ width: `${getHealthFillPercentage('atrisk')}%` }}
-          ></div>
-        </button>
-        <button
-          onClick={() => handleHealthClick('good')}
-          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
-            activeHealth === 'good' ? 'scale-110 shadow-lg' : ''
-          } ${
-            (fillLevel >= 0.25 && fillLevel < 0.5) || activeHealth === 'good'
-              ? "bg-yellow-100 border-2 border-yellow-200 text-yellow-800" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          <div className="relative z-10">Good</div>
-          <div 
-            className="absolute bottom-0 left-0 h-1 bg-yellow-500 transition-all duration-1000 ease-out"
-            style={{ width: `${getHealthFillPercentage('good')}%` }}
-          ></div>
-        </button>
-        <button
-          onClick={() => handleHealthClick('better')}
-          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
-            activeHealth === 'better' ? 'scale-110 shadow-lg' : ''
-          } ${
-            (fillLevel >= 0.5 && fillLevel < 0.75) || activeHealth === 'better'
-              ? "bg-orange-100 border-2 border-orange-200 text-orange-800" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          <div className="relative z-10">Better</div>
-          <div 
-            className="absolute bottom-0 left-0 h-1 bg-orange-500 transition-all duration-1000 ease-out"
-            style={{ width: `${getHealthFillPercentage('better')}%` }}
-          ></div>
-        </button>
-        <button
-          onClick={() => handleHealthClick('excellent')}
-          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
-            activeHealth === 'excellent' ? 'scale-110 shadow-lg' : ''
-          } ${
-            (fillLevel >= 0.75 && fillLevel < 1) || activeHealth === 'excellent'
-              ? "bg-green-100 border-2 border-green-200 text-green-800" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          <div className="relative z-10">Excellent</div>
-          <div 
-            className="absolute bottom-0 left-0 h-1 bg-green-500 transition-all duration-1000 ease-out"
-            style={{ width: `${getHealthFillPercentage('excellent')}%` }}
-          ></div>
-        </button>
-        <button
-          onClick={() => handleHealthClick('maximum')}
-          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
-            activeHealth === 'maximum' ? 'scale-110 shadow-lg' : ''
-          } ${
-            fillLevel >= 1 || activeHealth === 'maximum' 
-              ? "bg-emerald-100 border-2 border-emerald-200 text-emerald-800" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          <div className="relative z-10">Maximum Health</div>
-          <div 
-            className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-1000 ease-out"
-            style={{ width: `${getHealthFillPercentage('maximum')}%` }}
-          ></div>
-        </button>
       </div>
       
       {/* Current health status indicator */}
