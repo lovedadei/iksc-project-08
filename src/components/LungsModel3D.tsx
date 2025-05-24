@@ -75,7 +75,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   }, [fillLevel, scene]);
 
   return (
-    <group ref={meshRef} position={[0, 0, 0]} scale={[3.0, 3.0, 3.0]}>
+    <group ref={meshRef} position={[0, 0, 0]} scale={[6.0, 6.0, 6.0]}>
       {/* Render GLB model with much larger size */}
       <primitive object={scene.clone()} position={[0, 0, 0]} />
       
@@ -134,6 +134,24 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
       setActiveHealth(null);
     }, 1000); // Show for 1 second
   };
+
+  // Get fill percentage for each health level
+  const getHealthFillPercentage = (healthType: string) => {
+    switch (healthType) {
+      case 'atrisk':
+        return cappedFillLevel >= 0.25 ? 100 : (cappedFillLevel / 0.25) * 100;
+      case 'good':
+        return cappedFillLevel >= 0.5 ? 100 : Math.max(0, ((cappedFillLevel - 0.25) / 0.25) * 100);
+      case 'better':
+        return cappedFillLevel >= 0.75 ? 100 : Math.max(0, ((cappedFillLevel - 0.5) / 0.25) * 100);
+      case 'excellent':
+        return cappedFillLevel >= 1 ? 100 : Math.max(0, ((cappedFillLevel - 0.75) / 0.25) * 100);
+      case 'maximum':
+        return cappedFillLevel >= 1 ? 100 : 0;
+      default:
+        return 0;
+    }
+  };
   
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-50 to-green-50 rounded-2xl overflow-hidden shadow-xl">
@@ -168,72 +186,8 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
         />
       </Canvas>
       
-      {/* Interactive health status comparison indicators */}
-      <div className="absolute top-1/2 right-6 transform -translate-y-1/2 z-20 space-y-2">
-        <button
-          onClick={() => handleHealthClick('maximum')}
-          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-            activeHealth === 'maximum' ? 'scale-110 shadow-lg' : ''
-          } ${
-            fillLevel >= 1 || activeHealth === 'maximum' 
-              ? "bg-emerald-100 border-2 border-emerald-200 text-emerald-800 animate-pulse" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          Maximum Health
-        </button>
-        <button
-          onClick={() => handleHealthClick('excellent')}
-          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-            activeHealth === 'excellent' ? 'scale-110 shadow-lg' : ''
-          } ${
-            (fillLevel >= 0.75 && fillLevel < 1) || activeHealth === 'excellent'
-              ? "bg-green-100 border-2 border-green-200 text-green-800 animate-pulse" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          Excellent
-        </button>
-        <button
-          onClick={() => handleHealthClick('better')}
-          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-            activeHealth === 'better' ? 'scale-110 shadow-lg' : ''
-          } ${
-            (fillLevel >= 0.5 && fillLevel < 0.75) || activeHealth === 'better'
-              ? "bg-orange-100 border-2 border-orange-200 text-orange-800 animate-pulse" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          Better
-        </button>
-        <button
-          onClick={() => handleHealthClick('good')}
-          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-            activeHealth === 'good' ? 'scale-110 shadow-lg' : ''
-          } ${
-            (fillLevel >= 0.25 && fillLevel < 0.5) || activeHealth === 'good'
-              ? "bg-yellow-100 border-2 border-yellow-200 text-yellow-800 animate-pulse" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          Good
-        </button>
-        <button
-          onClick={() => handleHealthClick('atrisk')}
-          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-            activeHealth === 'atrisk' ? 'scale-110 shadow-lg' : ''
-          } ${
-            fillLevel < 0.25 || activeHealth === 'atrisk'
-              ? "bg-red-100 border-2 border-red-200 text-red-800 animate-pulse" 
-              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
-          }`}
-        >
-          At Risk
-        </button>
-      </div>
-      
       {/* Pledge count and percentage */}
-      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
+      <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 text-center z-20 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
         <p className="text-2xl font-bold text-gray-800">{pledgeCount} Pledges</p>
         <p className="text-lg text-gray-600">{fillPercentage}% Filled</p>
         <div className="w-48 bg-gray-200 rounded-full h-3 mt-2">
@@ -242,6 +196,90 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
             style={{ width: `${fillPercentage}%` }}
           ></div>
         </div>
+      </div>
+
+      {/* Interactive health status comparison indicators - moved above pledge count */}
+      <div className="absolute bottom-48 left-1/2 transform -translate-x-1/2 z-20 flex flex-wrap justify-center gap-2 max-w-md">
+        <button
+          onClick={() => handleHealthClick('atrisk')}
+          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
+            activeHealth === 'atrisk' ? 'scale-110 shadow-lg' : ''
+          } ${
+            fillLevel < 0.25 || activeHealth === 'atrisk'
+              ? "bg-red-100 border-2 border-red-200 text-red-800" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
+          <div className="relative z-10">At Risk</div>
+          <div 
+            className="absolute bottom-0 left-0 h-1 bg-red-500 transition-all duration-1000 ease-out"
+            style={{ width: `${getHealthFillPercentage('atrisk')}%` }}
+          ></div>
+        </button>
+        <button
+          onClick={() => handleHealthClick('good')}
+          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
+            activeHealth === 'good' ? 'scale-110 shadow-lg' : ''
+          } ${
+            (fillLevel >= 0.25 && fillLevel < 0.5) || activeHealth === 'good'
+              ? "bg-yellow-100 border-2 border-yellow-200 text-yellow-800" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
+          <div className="relative z-10">Good</div>
+          <div 
+            className="absolute bottom-0 left-0 h-1 bg-yellow-500 transition-all duration-1000 ease-out"
+            style={{ width: `${getHealthFillPercentage('good')}%` }}
+          ></div>
+        </button>
+        <button
+          onClick={() => handleHealthClick('better')}
+          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
+            activeHealth === 'better' ? 'scale-110 shadow-lg' : ''
+          } ${
+            (fillLevel >= 0.5 && fillLevel < 0.75) || activeHealth === 'better'
+              ? "bg-orange-100 border-2 border-orange-200 text-orange-800" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
+          <div className="relative z-10">Better</div>
+          <div 
+            className="absolute bottom-0 left-0 h-1 bg-orange-500 transition-all duration-1000 ease-out"
+            style={{ width: `${getHealthFillPercentage('better')}%` }}
+          ></div>
+        </button>
+        <button
+          onClick={() => handleHealthClick('excellent')}
+          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
+            activeHealth === 'excellent' ? 'scale-110 shadow-lg' : ''
+          } ${
+            (fillLevel >= 0.75 && fillLevel < 1) || activeHealth === 'excellent'
+              ? "bg-green-100 border-2 border-green-200 text-green-800" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
+          <div className="relative z-10">Excellent</div>
+          <div 
+            className="absolute bottom-0 left-0 h-1 bg-green-500 transition-all duration-1000 ease-out"
+            style={{ width: `${getHealthFillPercentage('excellent')}%` }}
+          ></div>
+        </button>
+        <button
+          onClick={() => handleHealthClick('maximum')}
+          className={`relative overflow-hidden px-3 py-2 rounded-lg text-xs transition-all duration-200 ${
+            activeHealth === 'maximum' ? 'scale-110 shadow-lg' : ''
+          } ${
+            fillLevel >= 1 || activeHealth === 'maximum' 
+              ? "bg-emerald-100 border-2 border-emerald-200 text-emerald-800" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
+          <div className="relative z-10">Maximum Health</div>
+          <div 
+            className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-1000 ease-out"
+            style={{ width: `${getHealthFillPercentage('maximum')}%` }}
+          ></div>
+        </button>
       </div>
       
       {/* Current health status indicator */}
