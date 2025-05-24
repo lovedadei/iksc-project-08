@@ -10,54 +10,6 @@ interface LungsModelProps {
   shouldAnimate: boolean;
 }
 
-// Bottle component that contains the lungs
-function Bottle({ fillLevel }: { fillLevel: number }) {
-  const bottleRef = useRef<THREE.Group>(null);
-  
-  // Create bottle shape
-  const bottleHeight = 5;
-  const bottleRadius = 2;
-  
-  // Water level based on fill percentage
-  const waterHeight = fillLevel * bottleHeight;
-  
-  return (
-    <group ref={bottleRef}>
-      {/* Bottle glass - very transparent cylinder */}
-      <mesh position={[0, 0, 0]} receiveShadow>
-        <cylinderGeometry args={[bottleRadius, bottleRadius, bottleHeight, 32]} />
-        <meshPhysicalMaterial
-          color="#ffffff"
-          transparent={true}
-          opacity={0.05}
-          thickness={0.1}
-          roughness={0}
-          metalness={0}
-          transmission={0.99}
-        />
-      </mesh>
-      
-      {/* Bottle cap */}
-      <mesh position={[0, bottleHeight/2 + 0.3, 0]}>
-        <cylinderGeometry args={[bottleRadius * 0.7, bottleRadius * 0.7, 0.6, 32]} />
-        <meshStandardMaterial color="#555555" opacity={0.8} transparent />
-      </mesh>
-      
-      {/* Green water inside bottle - very subtle */}
-      <mesh position={[0, -bottleHeight/2 + waterHeight/2, 0]}>
-        <cylinderGeometry args={[bottleRadius * 0.95, bottleRadius * 0.95, waterHeight, 32]} />
-        <meshStandardMaterial
-          color="#10b981"
-          transparent={true}
-          opacity={0.15}
-          emissive="#10b981"
-          emissiveIntensity={0.05}
-        />
-      </mesh>
-    </group>
-  );
-}
-
 function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) {
   const meshRef = useRef<THREE.Group>(null);
   const fillRef = useRef<THREE.Mesh>(null);
@@ -70,19 +22,19 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   useFrame((state) => {
     if (meshRef.current) {
       const time = state.clock.getElapsedTime();
-      const breatheScale = 1.2 + Math.sin(time * 0.5) * 0.03;
+      const breatheScale = 1.2 + Math.sin(time * 0.5) * 0.05;
       
       // Apply blooming animation when shouldAnimate is true
-      const bloomScale = shouldAnimate ? 1 + Math.sin(time * 8) * 0.2 : 1;
+      const bloomScale = shouldAnimate ? 1 + Math.sin(time * 8) * 0.3 : 1;
       
       meshRef.current.scale.setScalar(breatheScale * bloomScale * animationScale);
-      meshRef.current.rotation.y = Math.sin(time * 0.2) * 0.05;
+      meshRef.current.rotation.y = Math.sin(time * 0.2) * 0.1;
     }
     
     // Animate fill with blooming effect
     if (fillRef.current && shouldAnimate) {
       const time = state.clock.getElapsedTime();
-      const bloomPulse = 1 + Math.sin(time * 6) * 0.3;
+      const bloomPulse = 1 + Math.sin(time * 6) * 0.4;
       fillRef.current.scale.set(bloomPulse, 1, bloomPulse);
     } else if (fillRef.current) {
       fillRef.current.scale.set(1, 1, 1);
@@ -92,7 +44,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   // Trigger blooming animation
   useEffect(() => {
     if (shouldAnimate) {
-      setAnimationScale(1.3);
+      setAnimationScale(1.5);
       const timer = setTimeout(() => {
         setAnimationScale(1);
       }, 2000);
@@ -100,7 +52,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
     }
   }, [shouldAnimate]);
 
-  // Apply material changes to GLB model - make lungs very visible and green
+  // Apply material changes to GLB model - make lungs very bright and visible
   useEffect(() => {
     if (scene) {
       scene.traverse((child) => {
@@ -108,15 +60,14 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
           const mesh = child as THREE.Mesh;
           if (mesh.material && mesh.material instanceof THREE.MeshStandardMaterial) {
             const material = mesh.material;
-            // Make lungs bright green and very visible
-            const greenIntensity = 0.7 + fillLevel * 0.3;
-            material.color = new THREE.Color(0.1, 0.9, 0.3); // Bright green color
+            // Make lungs extremely bright green and visible
+            material.color = new THREE.Color(0.0, 1.0, 0.2); // Very bright green
             material.opacity = 1.0; // Fully opaque
             material.transparent = false;
-            material.metalness = 0.1;
-            material.roughness = 0.2;
-            material.emissive = new THREE.Color("#22c55e");
-            material.emissiveIntensity = fillLevel * 0.6 + 0.3; // Strong glow
+            material.metalness = 0.0;
+            material.roughness = 0.1;
+            material.emissive = new THREE.Color("#00ff44");
+            material.emissiveIntensity = fillLevel * 0.8 + 0.5; // Very strong glow
           }
         }
       });
@@ -124,26 +75,26 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   }, [fillLevel, scene]);
 
   return (
-    <group ref={meshRef} position={[0, 0, 0]} scale={[1.8, 1.8, 1.8]}>
-      {/* Render GLB model with scaled size - positioned to be clearly visible */}
+    <group ref={meshRef} position={[0, 0, 0]} scale={[3.0, 3.0, 3.0]}>
+      {/* Render GLB model with much larger size */}
       <primitive object={scene.clone()} position={[0, 0, 0]} />
       
       {/* Add blooming particle effect when animating */}
       {shouldAnimate && (
         <>
-          {[...Array(6)].map((_, i) => (
+          {[...Array(8)].map((_, i) => (
             <mesh key={i} position={[
-              Math.cos(i * Math.PI / 3) * 1.5,
-              Math.sin(i * Math.PI / 3) * 1.2,
-              Math.sin(i * Math.PI / 3) * 0.5
+              Math.cos(i * Math.PI / 4) * 2.0,
+              Math.sin(i * Math.PI / 4) * 1.5,
+              Math.sin(i * Math.PI / 4) * 0.8
             ]}>
-              <sphereGeometry args={[0.1]} />
+              <sphereGeometry args={[0.15]} />
               <meshStandardMaterial 
-                color="#22c55e"
-                emissive="#22c55e"
-                emissiveIntensity={0.8}
+                color="#00ff44"
+                emissive="#00ff44"
+                emissiveIntensity={1.0}
                 transparent
-                opacity={0.7}
+                opacity={0.8}
               />
             </mesh>
           ))}
@@ -159,6 +110,8 @@ interface LungsModel3DProps {
 }
 
 const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate = false }) => {
+  const [activeHealth, setActiveHealth] = useState<string | null>(null);
+  
   // Adjusted fill level calculation: 100 pledges = 50%, 200 pledges = 100%
   const fillLevel = pledgeCount < 100 ? (pledgeCount / 100) * 0.5 : 0.5 + ((pledgeCount - 100) / 100) * 0.5;
   const cappedFillLevel = Math.min(fillLevel, 1);
@@ -174,27 +127,32 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
   };
   
   const healthStatus = getHealthStatus(cappedFillLevel);
+
+  const handleHealthClick = (healthType: string) => {
+    setActiveHealth(healthType);
+    setTimeout(() => {
+      setActiveHealth(null);
+    }, 1000); // Show for 1 second
+  };
   
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-50 to-green-50 rounded-2xl overflow-hidden shadow-xl">
       <Canvas
-        camera={{ position: [0, 0, 8], fov: 60 }}
+        camera={{ position: [0, 0, 10], fov: 60 }}
         className="w-full h-full"
         style={{ zIndex: 10 }}
         shadows
       >
-        <ambientLight intensity={1.5} />
-        <directionalLight position={[5, 5, 5]} intensity={2.5} castShadow />
-        <pointLight position={[-5, -5, -5]} intensity={1.5} color="#22c55e" />
-        <spotLight position={[0, 10, 0]} intensity={2} color="#ffffff" />
+        <ambientLight intensity={2.0} />
+        <directionalLight position={[5, 5, 5]} intensity={3.0} castShadow />
+        <pointLight position={[-5, -5, -5]} intensity={2.0} color="#00ff44" />
+        <pointLight position={[5, -5, 5]} intensity={2.0} color="#00ff44" />
+        <spotLight position={[0, 10, 0]} intensity={3.0} color="#ffffff" />
         
         <Environment preset="studio" />
         
-        {/* Bottle containing the lungs */}
-        <Bottle fillLevel={cappedFillLevel} />
-        
-        {/* Lungs model - positioned to be clearly visible inside bottle */}
-        <group position={[0, -0.5, 0]}>
+        {/* Lungs model - much larger and more visible */}
+        <group position={[0, 0, 0]}>
           <LungsModel pledgeCount={pledgeCount} fillLevel={cappedFillLevel} shouldAnimate={shouldAnimate} />
         </group>
         
@@ -204,29 +162,74 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
           autoRotate={false}
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 1.2}
-          minDistance={4}
-          maxDistance={12}
+          minDistance={6}
+          maxDistance={15}
           zoomSpeed={1.2}
         />
       </Canvas>
       
-      {/* Health status comparison indicator */}
+      {/* Interactive health status comparison indicators */}
       <div className="absolute top-1/2 right-6 transform -translate-y-1/2 z-20 space-y-2">
-        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel >= 1 ? "animate-pulse" : ""} ${fillLevel >= 1 ? "bg-emerald-100 border-2 border-emerald-200 text-emerald-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+        <button
+          onClick={() => handleHealthClick('maximum')}
+          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+            activeHealth === 'maximum' ? 'scale-110 shadow-lg' : ''
+          } ${
+            fillLevel >= 1 || activeHealth === 'maximum' 
+              ? "bg-emerald-100 border-2 border-emerald-200 text-emerald-800 animate-pulse" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
           Maximum Health
-        </div>
-        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel >= 0.75 && fillLevel < 1 ? "animate-pulse" : ""} ${fillLevel >= 0.75 ? "bg-green-100 border-2 border-green-200 text-green-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+        </button>
+        <button
+          onClick={() => handleHealthClick('excellent')}
+          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+            activeHealth === 'excellent' ? 'scale-110 shadow-lg' : ''
+          } ${
+            (fillLevel >= 0.75 && fillLevel < 1) || activeHealth === 'excellent'
+              ? "bg-green-100 border-2 border-green-200 text-green-800 animate-pulse" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
           Excellent
-        </div>
-        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel >= 0.5 && fillLevel < 0.75 ? "animate-pulse" : ""} ${fillLevel >= 0.5 ? "bg-orange-100 border-2 border-orange-200 text-orange-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+        </button>
+        <button
+          onClick={() => handleHealthClick('better')}
+          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+            activeHealth === 'better' ? 'scale-110 shadow-lg' : ''
+          } ${
+            (fillLevel >= 0.5 && fillLevel < 0.75) || activeHealth === 'better'
+              ? "bg-orange-100 border-2 border-orange-200 text-orange-800 animate-pulse" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
           Better
-        </div>
-        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel >= 0.25 && fillLevel < 0.5 ? "animate-pulse" : ""} ${fillLevel >= 0.25 ? "bg-yellow-100 border-2 border-yellow-200 text-yellow-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+        </button>
+        <button
+          onClick={() => handleHealthClick('good')}
+          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+            activeHealth === 'good' ? 'scale-110 shadow-lg' : ''
+          } ${
+            (fillLevel >= 0.25 && fillLevel < 0.5) || activeHealth === 'good'
+              ? "bg-yellow-100 border-2 border-yellow-200 text-yellow-800 animate-pulse" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
           Good
-        </div>
-        <div className={`px-4 py-2 rounded-lg text-sm ${fillLevel < 0.25 ? "animate-pulse" : ""} ${fillLevel < 0.25 ? "bg-red-100 border-2 border-red-200 text-red-800" : "bg-white/50 border border-gray-200 text-gray-400"}`}>
+        </button>
+        <button
+          onClick={() => handleHealthClick('atrisk')}
+          className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+            activeHealth === 'atrisk' ? 'scale-110 shadow-lg' : ''
+          } ${
+            fillLevel < 0.25 || activeHealth === 'atrisk'
+              ? "bg-red-100 border-2 border-red-200 text-red-800 animate-pulse" 
+              : "bg-white/50 border border-gray-200 text-gray-400 hover:bg-white/70"
+          }`}
+        >
           At Risk
-        </div>
+        </button>
       </div>
       
       {/* Pledge count and percentage */}
