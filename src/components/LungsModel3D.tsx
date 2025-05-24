@@ -23,35 +23,35 @@ function Bottle({ fillLevel }: { fillLevel: number }) {
   
   return (
     <group ref={bottleRef}>
-      {/* Bottle glass - more transparent cylinder */}
+      {/* Bottle glass - very transparent cylinder */}
       <mesh position={[0, 0, 0]} receiveShadow>
         <cylinderGeometry args={[bottleRadius, bottleRadius, bottleHeight, 32]} />
         <meshPhysicalMaterial
           color="#ffffff"
           transparent={true}
-          opacity={0.15}
-          thickness={0.2}
+          opacity={0.05}
+          thickness={0.1}
           roughness={0}
           metalness={0}
-          transmission={0.98}
+          transmission={0.99}
         />
       </mesh>
       
       {/* Bottle cap */}
       <mesh position={[0, bottleHeight/2 + 0.3, 0]}>
         <cylinderGeometry args={[bottleRadius * 0.7, bottleRadius * 0.7, 0.6, 32]} />
-        <meshStandardMaterial color="#555555" />
+        <meshStandardMaterial color="#555555" opacity={0.8} transparent />
       </mesh>
       
-      {/* Green water inside bottle */}
+      {/* Green water inside bottle - very subtle */}
       <mesh position={[0, -bottleHeight/2 + waterHeight/2, 0]}>
         <cylinderGeometry args={[bottleRadius * 0.95, bottleRadius * 0.95, waterHeight, 32]} />
         <meshStandardMaterial
           color="#10b981"
           transparent={true}
-          opacity={0.4}
+          opacity={0.15}
           emissive="#10b981"
-          emissiveIntensity={0.1}
+          emissiveIntensity={0.05}
         />
       </mesh>
     </group>
@@ -100,7 +100,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
     }
   }, [shouldAnimate]);
 
-  // Apply material changes to GLB model - make lungs greener and more visible
+  // Apply material changes to GLB model - make lungs very visible and green
   useEffect(() => {
     if (scene) {
       scene.traverse((child) => {
@@ -108,15 +108,15 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
           const mesh = child as THREE.Mesh;
           if (mesh.material && mesh.material instanceof THREE.MeshStandardMaterial) {
             const material = mesh.material;
-            // Make lungs bright green and more visible
-            const greenIntensity = 0.5 + fillLevel * 0.5;
-            material.color = new THREE.Color(0.2, 0.8, 0.4); // Bright green color
-            material.opacity = 0.9; // More opaque
-            material.transparent = true;
-            material.metalness = 0.2;
-            material.roughness = 0.3;
-            material.emissive = new THREE.Color("#10b981");
-            material.emissiveIntensity = fillLevel * 0.4 + 0.2; // Always some glow
+            // Make lungs bright green and very visible
+            const greenIntensity = 0.7 + fillLevel * 0.3;
+            material.color = new THREE.Color(0.1, 0.9, 0.3); // Bright green color
+            material.opacity = 1.0; // Fully opaque
+            material.transparent = false;
+            material.metalness = 0.1;
+            material.roughness = 0.2;
+            material.emissive = new THREE.Color("#22c55e");
+            material.emissiveIntensity = fillLevel * 0.6 + 0.3; // Strong glow
           }
         }
       });
@@ -124,7 +124,7 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
   }, [fillLevel, scene]);
 
   return (
-    <group ref={meshRef} position={[0, 0, 0]} scale={[1.5, 1.5, 1.5]}>
+    <group ref={meshRef} position={[0, 0, 0]} scale={[1.8, 1.8, 1.8]}>
       {/* Render GLB model with scaled size - positioned to be clearly visible */}
       <primitive object={scene.clone()} position={[0, 0, 0]} />
       
@@ -139,8 +139,8 @@ function LungsModel({ pledgeCount, fillLevel, shouldAnimate }: LungsModelProps) 
             ]}>
               <sphereGeometry args={[0.1]} />
               <meshStandardMaterial 
-                color="#10b981"
-                emissive="#10b981"
+                color="#22c55e"
+                emissive="#22c55e"
                 emissiveIntensity={0.8}
                 transparent
                 opacity={0.7}
@@ -183,10 +183,10 @@ const LungsModel3D: React.FC<LungsModel3DProps> = ({ pledgeCount, shouldAnimate 
         style={{ zIndex: 10 }}
         shadows
       >
-        <ambientLight intensity={1.2} />
-        <directionalLight position={[5, 5, 5]} intensity={2} castShadow />
-        <pointLight position={[-5, -5, -5]} intensity={1.2} color="#10b981" />
-        <spotLight position={[0, 10, 0]} intensity={1.5} color="#ffffff" />
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[5, 5, 5]} intensity={2.5} castShadow />
+        <pointLight position={[-5, -5, -5]} intensity={1.5} color="#22c55e" />
+        <spotLight position={[0, 10, 0]} intensity={2} color="#ffffff" />
         
         <Environment preset="studio" />
         
