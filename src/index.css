@@ -49,6 +49,11 @@
     --nature-green: 142 76% 36%;
     --sky-blue: 199 89% 48%;
     --fresh-mint: 168 76% 42%;
+    
+    /* Dark green theme colors */
+    --forest-dark: 120 100% 8%;
+    --forest-medium: 120 60% 15%;
+    --forest-light: 120 40% 25%;
   }
 
   .dark {
@@ -140,6 +145,30 @@
   }
 }
 
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes forest-whisper {
+  0%, 100% {
+    transform: translateX(0px) scale(1);
+    opacity: 0.2;
+  }
+  33% {
+    transform: translateX(5px) scale(1.02);
+    opacity: 0.15;
+  }
+  66% {
+    transform: translateX(-3px) scale(0.98);
+    opacity: 0.25;
+  }
+}
+
 .bloom-animation {
   animation: bloom 0.8s ease-out forwards;
 }
@@ -156,7 +185,33 @@
   animation: breathe 4s ease-in-out infinite;
 }
 
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.forest-whisper {
+  animation: forest-whisper 8s ease-in-out infinite;
+}
+
 /* Custom transition durations */
 .duration-4000 {
   transition-duration: 4000ms;
+}
+
+/* Dark green gradient backgrounds */
+.bg-forest-gradient {
+  background: linear-gradient(135deg, hsl(var(--forest-dark)) 0%, hsl(var(--forest-medium)) 50%, hsl(var(--forest-light)) 100%);
+}
+
+/* Backdrop blur utilities for glass morphism effect */
+.backdrop-blur-xs {
+  backdrop-filter: blur(2px);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(8px);
 }
