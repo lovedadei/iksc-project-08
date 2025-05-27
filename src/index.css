@@ -169,6 +169,35 @@
   }
 }
 
+@keyframes slide-right {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .bloom-animation {
   animation: bloom 0.8s ease-out forwards;
 }
@@ -193,6 +222,10 @@
   animation: forest-whisper 8s ease-in-out infinite;
 }
 
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
 /* Custom transition durations */
 .duration-4000 {
   transition-duration: 4000ms;
@@ -214,4 +247,9 @@
 
 .backdrop-blur-md {
   backdrop-filter: blur(8px);
+}
+
+/* Shadow utilities */
+.shadow-3xl {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
 }
