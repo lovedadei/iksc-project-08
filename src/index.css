@@ -44,11 +44,14 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Campaign-specific colors */
-    --bloom-pink: 350 100% 88%;
-    --nature-green: 142 76% 36%;
-    --sky-blue: 199 89% 48%;
-    --fresh-mint: 168 76% 42%;
+    /* Updated Campaign-specific colors inspired by the reference image */
+    --bloom-pink: 339 100% 85%;
+    --nature-green: 120 60% 25%;
+    --sky-blue: 200 100% 85%;
+    --fresh-mint: 150 50% 60%;
+    --forest-green: 140 80% 20%;
+    --leaf-green: 110 70% 45%;
+    --earth-brown: 25 50% 30%;
   }
 
   .dark {
@@ -89,10 +92,15 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image: 
+      radial-gradient(circle at 20% 80%, hsla(120, 60%, 25%, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsla(150, 50%, 60%, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, hsla(110, 70%, 45%, 0.05) 0%, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
-/* Campaign-specific animations */
+/* Enhanced Campaign-specific animations */
 @keyframes bloom {
   0% {
     transform: scale(0) rotate(0deg);
@@ -113,10 +121,10 @@
     transform: translateX(0px) rotate(0deg);
   }
   25% {
-    transform: translateX(2px) rotate(1deg);
+    transform: translateX(3px) rotate(1.5deg);
   }
   75% {
-    transform: translateX(-2px) rotate(-1deg);
+    transform: translateX(-3px) rotate(-1.5deg);
   }
 }
 
@@ -126,8 +134,8 @@
     opacity: 1;
   }
   50% {
-    transform: scale(1.05);
-    opacity: 0.8;
+    transform: scale(1.08);
+    opacity: 0.85;
   }
 }
 
@@ -136,7 +144,33 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.12);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes leaf-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
   }
 }
 
@@ -145,18 +179,46 @@
 }
 
 .gentle-sway {
-  animation: gentle-sway 3s ease-in-out infinite;
+  animation: gentle-sway 4s ease-in-out infinite;
 }
 
 .pulse-grow {
-  animation: pulse-grow 2s ease-in-out infinite;
+  animation: pulse-grow 3s ease-in-out infinite;
 }
 
 .breathe {
-  animation: breathe 4s ease-in-out infinite;
+  animation: breathe 5s ease-in-out infinite;
+}
+
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.leaf-fall {
+  animation: leaf-fall 8s linear infinite;
 }
 
 /* Custom transition durations */
 .duration-4000 {
   transition-duration: 4000ms;
+}
+
+/* Modern glass morphism effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.nature-shadow {
+  box-shadow: 0 20px 50px rgba(34, 139, 34, 0.2);
+}
+
+/* Organic background patterns */
+.organic-bg {
+  background-image: 
+    radial-gradient(circle at 25% 25%, hsla(120, 60%, 25%, 0.1) 0%, transparent 25%),
+    radial-gradient(circle at 75% 75%, hsla(150, 50%, 60%, 0.1) 0%, transparent 25%),
+    linear-gradient(135deg, hsla(110, 70%, 45%, 0.05) 0%, hsla(140, 80%, 20%, 0.05) 100%);
 }

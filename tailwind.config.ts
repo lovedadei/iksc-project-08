@@ -63,11 +63,14 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Campaign-specific colors
+				// Enhanced nature-inspired colors
 				'bloom-pink': 'hsl(var(--bloom-pink))',
 				'nature-green': 'hsl(var(--nature-green))',
 				'sky-blue': 'hsl(var(--sky-blue))',
-				'fresh-mint': 'hsl(var(--fresh-mint))'
+				'fresh-mint': 'hsl(var(--fresh-mint))',
+				'forest-green': 'hsl(var(--forest-green))',
+				'leaf-green': 'hsl(var(--leaf-green))',
+				'earth-brown': 'hsl(var(--earth-brown))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -97,8 +100,16 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out'
 			},
 			backgroundImage: {
+				'nature-gradient': 'linear-gradient(135deg, hsl(var(--forest-green)) 0%, hsl(var(--leaf-green)) 50%, hsl(var(--fresh-mint)) 100%)',
 				'fresh-gradient': 'linear-gradient(135deg, hsl(var(--sky-blue)) 0%, hsl(var(--fresh-mint)) 50%, hsl(var(--nature-green)) 100%)',
-				'bloom-gradient': 'linear-gradient(135deg, hsl(var(--bloom-pink)) 0%, hsl(var(--sky-blue)) 100%)'
+				'bloom-gradient': 'linear-gradient(135deg, hsl(var(--bloom-pink)) 0%, hsl(var(--sky-blue)) 100%)',
+				'earth-gradient': 'linear-gradient(135deg, hsl(var(--earth-brown)) 0%, hsl(var(--forest-green)) 50%, hsl(var(--leaf-green)) 100%)',
+				'organic-texture': 'radial-gradient(circle at 25% 25%, hsla(120, 60%, 25%, 0.1) 0%, transparent 25%), radial-gradient(circle at 75% 75%, hsla(150, 50%, 60%, 0.1) 0%, transparent 25%)'
+			},
+			boxShadow: {
+				'nature': '0 20px 50px rgba(34, 139, 34, 0.15)',
+				'organic': '0 25px 60px rgba(46, 125, 50, 0.2)',
+				'leaf': '0 15px 40px rgba(76, 175, 80, 0.25)'
 			}
 		}
 	},
