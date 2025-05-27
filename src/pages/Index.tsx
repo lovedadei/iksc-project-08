@@ -126,12 +126,12 @@ const Index = () => {
             <img 
               src="/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png" 
               alt="IKSC Logo" 
-              className="h-16 md:h-40 w-auto object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300"
+              className="h-16 md:h-20 w-auto object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300"
             />
             <img 
               src="/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png" 
               alt="KARE Logo" 
-              className="h-16 md:h-40 w-auto object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300"
+              className="h-16 md:h-20 w-auto object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300"
             />
           </div>
           
