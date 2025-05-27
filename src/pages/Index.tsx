@@ -93,27 +93,34 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-700 relative overflow-hidden">
-      {/* Background Images */}
+      {/* Properly positioned background Images */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-0 left-0 w-1/3 h-1/2 opacity-20">
+        <div className="absolute top-10 left-10 w-80 h-60 opacity-10">
           <img 
             src="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
             alt="Forest background" 
-            className="w-full h-full object-cover rounded-br-3xl"
+            className="w-full h-full object-cover rounded-3xl"
           />
         </div>
-        <div className="absolute bottom-0 right-0 w-1/2 h-1/3 opacity-15">
+        <div className="absolute bottom-10 right-10 w-96 h-64 opacity-12">
           <img 
             src="https://images.unsplash.com/photo-1518495973542-4542c06a5843?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
             alt="Nature background" 
-            className="w-full h-full object-cover rounded-tl-3xl"
+            className="w-full h-full object-cover rounded-3xl"
           />
         </div>
-        <div className="absolute top-1/4 right-1/4 w-1/4 h-1/4 opacity-10">
+        <div className="absolute top-1/3 right-1/3 w-48 h-48 opacity-8">
           <img 
             src="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
             alt="Pine trees" 
             className="w-full h-full object-cover rounded-full"
+          />
+        </div>
+        <div className="absolute bottom-1/4 left-1/4 w-56 h-40 opacity-8">
+          <img 
+            src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+            alt="Forest path" 
+            className="w-full h-full object-cover rounded-2xl"
           />
         </div>
       </div>

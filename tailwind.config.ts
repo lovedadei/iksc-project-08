@@ -98,7 +98,9 @@ export default {
 			},
 			backgroundImage: {
 				'fresh-gradient': 'linear-gradient(135deg, hsl(var(--sky-blue)) 0%, hsl(var(--fresh-mint)) 50%, hsl(var(--nature-green)) 100%)',
-				'bloom-gradient': 'linear-gradient(135deg, hsl(var(--bloom-pink)) 0%, hsl(var(--sky-blue)) 100%)'
+				'bloom-gradient': 'linear-gradient(135deg, hsl(var(--bloom-pink)) 0%, hsl(var(--sky-blue)) 100%)',
+				'rainbow-gradient': 'linear-gradient(270deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff)',
+				'rainbow-border': 'linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff, #ff6b6b)'
 			}
 		}
 	},
