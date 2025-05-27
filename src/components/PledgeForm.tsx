@@ -270,124 +270,95 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-2xl bg-white/95 backdrop-blur-sm border-0 relative overflow-hidden" id="pledge-form">
-      {/* Rainbow border effect */}
-      <div className="absolute inset-0 bg-rainbow-border rainbow-animate rounded-lg p-1">
-        <div className="bg-white rounded-lg h-full w-full"></div>
-      </div>
-      
-      <div className="relative z-10">
-        <CardHeader className="text-center bg-rainbow-gradient rainbow-animate rounded-t-lg">
-          <CardTitle className="text-2xl font-bold text-white drop-shadow-lg">
-            Take the Pledge
-          </CardTitle>
-          <p className="text-white/90 text-sm font-medium drop-shadow">
-            Join the movement for healthier lungs and a tobacco-free life
-          </p>
-        </CardHeader>
-        
-        <CardContent className="p-6 space-y-6 bg-white rounded-b-lg">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-3">
-              <Label htmlFor="fullName" className="text-gray-700 font-semibold text-sm">
-                Full Name *
-              </Label>
-              <div className="relative">
-                <div className="absolute inset-0 bg-rainbow-gradient opacity-20 rounded-md blur-sm"></div>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  placeholder="Enter your full name"
-                  className={`relative z-10 transition-all duration-300 border-2 focus:border-transparent focus:ring-2 focus:ring-offset-2 ${
-                    errors.fullName 
-                      ? 'border-red-400 focus:ring-red-400' 
-                      : 'border-gray-200 hover:border-gray-300 focus:ring-blue-400'
-                  }`}
-                />
-              </div>
-              {errors.fullName && (
-                <p className="text-red-500 text-sm font-medium">{errors.fullName}</p>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
-                Email Address *
-              </Label>
-              <div className="relative">
-                <div className="absolute inset-0 bg-rainbow-gradient opacity-20 rounded-md blur-sm"></div>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Enter your email"
-                  className={`relative z-10 transition-all duration-300 border-2 focus:border-transparent focus:ring-2 focus:ring-offset-2 ${
-                    errors.email 
-                      ? 'border-red-400 focus:ring-red-400' 
-                      : 'border-gray-200 hover:border-gray-300 focus:ring-purple-400'
-                  }`}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-red-500 text-sm font-medium">{errors.email}</p>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor="referralCode" className="text-gray-700 font-semibold text-sm">
-                Referral Code (Optional)
-              </Label>
-              <div className="relative">
-                <div className="absolute inset-0 bg-rainbow-gradient opacity-15 rounded-md blur-sm"></div>
-                <Input
-                  id="referralCode"
-                  type="text"
-                  value={formData.referralCode}
-                  onChange={(e) => handleInputChange('referralCode', e.target.value.toUpperCase())}
-                  placeholder="Enter referral code if you have one"
-                  className="relative z-10 border-2 border-gray-200 hover:border-gray-300 focus:border-transparent focus:ring-2 focus:ring-green-400 focus:ring-offset-2 transition-all duration-300"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2">
-              {isSubmitEnabled && !isSubmitting ? (
-                <div className="relative">
-                  <div className="absolute inset-0 bg-rainbow-gradient rounded-xl blur-sm opacity-75"></div>
-                  <Button
-                    type="submit"
-                    className="relative z-10 w-full py-4 text-lg font-bold bg-rainbow-gradient rainbow-animate text-white rounded-xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                  >
-                    🌈 Make My Pledge 🌸
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={true}
-                  className="w-full py-4 text-lg font-semibold bg-gray-300 text-gray-500 cursor-not-allowed rounded-xl"
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                      Submitting...
-                    </span>
-                  ) : (
-                    `Wait ${countdown}s to submit`
-                  )}
-                </Button>
-              )}
-            </div>
-          </form>
-
-          <div className="text-center text-xs text-gray-500 pt-2 border-t border-gray-100">
-            By submitting, you commit to a tobacco-free lifestyle and join our healthy lungs community
+    <Card className="w-full max-w-md mx-auto shadow-2xl bg-gray-900/95 backdrop-blur-sm border border-gray-700 hover:shadow-3xl transition-all duration-500 hover:scale-105" id="pledge-form">
+      <CardHeader className="text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-t-lg hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 transition-all duration-300">
+        <CardTitle className="text-2xl font-bold text-white hover:scale-105 transition-transform duration-300">
+          Take the Pledge
+        </CardTitle>
+        <p className="text-white/90 text-sm hover:text-white transition-colors duration-300">
+          Join the movement for healthier lungs and a tobacco-free life
+        </p>
+      </CardHeader>
+      <CardContent className="p-6 space-y-4 bg-gray-800/90">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className="text-gray-200 font-medium hover:text-white transition-colors duration-300">
+              Full Name *
+            </Label>
+            <Input
+              id="fullName"
+              type="text"
+              value={formData.fullName}
+              onChange={(e) => handleInputChange('fullName', e.target.value)}
+              placeholder="Enter your full name"
+              className={`transition-all duration-300 bg-gray-700 border-gray-600 text-white placeholder-gray-400 hover:bg-gray-600 focus:bg-gray-600 ${
+                errors.fullName ? 'border-red-500 focus:border-red-500' : 'focus:border-purple-500'
+              }`}
+            />
+            {errors.fullName && (
+              <p className="text-red-400 text-sm animate-fade-in">{errors.fullName}</p>
+            )}
           </div>
-        </CardContent>
-      </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-gray-200 font-medium hover:text-white transition-colors duration-300">
+              Email Address *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              placeholder="Enter your email"
+              className={`transition-all duration-300 bg-gray-700 border-gray-600 text-white placeholder-gray-400 hover:bg-gray-600 focus:bg-gray-600 ${
+                errors.email ? 'border-red-500 focus:border-red-500' : 'focus:border-purple-500'
+              }`}
+            />
+            {errors.email && (
+              <p className="text-red-400 text-sm animate-fade-in">{errors.email}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="referralCode" className="text-gray-200 font-medium hover:text-white transition-colors duration-300">
+              Referral Code (Optional)
+            </Label>
+            <Input
+              id="referralCode"
+              type="text"
+              value={formData.referralCode}
+              onChange={(e) => handleInputChange('referralCode', e.target.value.toUpperCase())}
+              placeholder="Enter referral code if you have one"
+              className="focus:border-purple-500 transition-all duration-300 bg-gray-700 border-gray-600 text-white placeholder-gray-400 hover:bg-gray-600 focus:bg-gray-600"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            disabled={!isSubmitEnabled || isSubmitting}
+            className={`w-full py-3 text-lg font-semibold transition-all duration-300 ${
+              isSubmitEnabled && !isSubmitting
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 hover:shadow-lg'
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center">
+                <span className="animate-spin mr-2">⏳</span>
+                Submitting...
+              </span>
+            ) : !isSubmitEnabled ? (
+              `Wait ${countdown}s to submit`
+            ) : (
+              '🌸 Make My Pledge'
+            )}
+          </Button>
+        </form>
+
+        <div className="text-center text-xs text-gray-400 mt-4 hover:text-gray-300 transition-colors duration-300">
+          By submitting, you commit to a tobacco-free lifestyle and join our healthy lungs community
+        </div>
+      </CardContent>
     </Card>
   );
 };
