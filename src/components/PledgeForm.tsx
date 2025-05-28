@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PledgeFormProps {
   onPledgeSubmit: (pledgeData: {
@@ -17,6 +18,7 @@ interface PledgeFormProps {
 }
 
 const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -26,6 +28,17 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   const [isSubmitEnabled, setIsSubmitEnabled] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Pre-fill form with user data
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: user.user_metadata?.full_name || '',
+        email: user.email || ''
+      }));
+    }
+  }, [user]);
 
   // Handle 30-second wait timer
   useEffect(() => {
@@ -51,31 +64,6 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
     }
   }, []);
 
-  const blockedDomains = [
-    'tempmail.com',
-    '10minutemail.com',
-    'guerrillamail.com',
-    'mailinator.com',
-    'throwaway.email',
-    'temp-mail.org',
-    'disposablemail.com',
-    'fakeinbox.com'
-  ];
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
-    }
-    
-    const domain = email.split('@')[1]?.toLowerCase();
-    if (blockedDomains.includes(domain)) {
-      return 'Temporary email addresses are not allowed';
-    }
-    
-    return '';
-  };
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -87,11 +75,6 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
-    } else {
-      const emailError = validateEmail(formData.email.trim());
-      if (emailError) {
-        newErrors.email = emailError;
-      }
     }
 
     setErrors(newErrors);
@@ -101,19 +84,17 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isSubmitEnabled || isSubmitting) return;
+    if (!isSubmitEnabled || isSubmitting || !user) return;
     
     if (validateForm()) {
       setIsSubmitting(true);
       
       try {
-        const normalizedEmail = formData.email.trim().toLowerCase();
-        
-        // Check if email already exists with better error handling
-        const { data: existingPledges, error: checkError } = await supabase
+        // Check if user already has a pledge
+        const { data: existingPledge, error: checkError } = await supabase
           .from('pledges')
           .select('id, referral_code, full_name')
-          .eq('email', normalizedEmail)
+          .eq('user_id', user.id)
           .maybeSingle();
 
         if (checkError) {
@@ -127,19 +108,19 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           return;
         }
 
-        if (existingPledges) {
+        if (existingPledge) {
           // User already pledged
           toast({
             title: "You've already made a pledge!",
-            description: `Welcome back, ${existingPledges.full_name}! Thank you for your continued commitment.`,
+            description: `Welcome back, ${existingPledge.full_name}! Thank you for your continued commitment.`,
           });
           
           // Still trigger success with existing pledge data
           onPledgeSubmit({
-            fullName: existingPledges.full_name,
-            email: normalizedEmail,
-            referralCode: existingPledges.referral_code || '',
-            pledgeId: existingPledges.id
+            fullName: existingPledge.full_name,
+            email: formData.email,
+            referralCode: existingPledge.referral_code || '',
+            pledgeId: existingPledge.id
           });
           
           setIsSubmitting(false);
@@ -167,32 +148,25 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         }
 
-        // Create new pledge with normalized email
+        // Create new pledge with user_id
         const { data: newPledge, error: pledgeError } = await supabase
           .from('pledges')
           .insert({
             full_name: formData.fullName.trim(),
-            email: normalizedEmail,
-            referral_code: referralCode
+            email: formData.email.trim(),
+            referral_code: referralCode,
+            user_id: user.id
           })
           .select()
           .single();
 
         if (pledgeError) {
           console.error('Error creating pledge:', pledgeError);
-          if (pledgeError.code === '23505') { // Unique constraint violation
-            toast({
-              title: "Email already exists",
-              description: "This email has already been used for a pledge.",
-              variant: "destructive"
-            });
-          } else {
-            toast({
-              title: "Error creating pledge",
-              description: "Please try again later.",
-              variant: "destructive"
-            });
-          }
+          toast({
+            title: "Error creating pledge",
+            description: "Please try again later.",
+            variant: "destructive"
+          });
           setIsSubmitting(false);
           return;
         }
@@ -234,12 +208,12 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
         }
 
         // Reset form
-        setFormData({ fullName: '', email: '', referralCode: '' });
+        setFormData(prev => ({ ...prev, referralCode: '' }));
         
         // Call onPledgeSubmit with the new pledge data
         onPledgeSubmit({
           fullName: formData.fullName.trim(),
-          email: normalizedEmail,
+          email: formData.email.trim(),
           referralCode: referralCode,
           pledgeId: newPledge.id
         });
@@ -310,10 +284,10 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Enter your email"
-              className={`transition-all duration-200 ${
-                errors.email ? 'border-red-500 focus:border-red-500' : 'focus:border-nature-green'
-              }`}
+              disabled={true}
+              className="bg-gray-50 cursor-not-allowed"
             />
+            <p className="text-xs text-gray-500">Email is pre-filled from your account</p>
             {errors.email && (
               <p className="text-red-500 text-sm">{errors.email}</p>
             )}

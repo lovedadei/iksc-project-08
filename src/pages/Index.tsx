@@ -1,13 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
 import PledgeSuccessModal from '../components/PledgeSuccessModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [pledgeCount, setPledgeCount] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [shouldAnimateLungs, setShouldAnimateLungs] = useState(false);
@@ -16,6 +20,13 @@ const Index = () => {
     referralLink: '',
     pledgeId: ''
   });
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
 
   // Fetch pledge count on component mount
   useEffect(() => {
@@ -84,6 +95,25 @@ const Index = () => {
     }, 3000);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-700 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // If not authenticated, the useEffect will redirect to auth
+  if (!user) {
+    return null;
+  }
+
   const stats = [
     { label: 'Total Pledges', value: pledgeCount, icon: '🌸' },
     { label: 'Lives Impacted', value: pledgeCount * 3, icon: '❤️' },
@@ -121,18 +151,31 @@ const Index = () => {
       {/* Hero Section */}
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-8 md:py-16">
-          {/* Header with Logos */}
+          {/* Header with Logos and Sign Out */}
           <div className="flex justify-between items-center mb-8 md:mb-16">
-            <img 
-              src="/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png" 
-              alt="IKSC Logo" 
-              className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
-            />
-            <img 
-              src="/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png" 
-              alt="KARE Logo" 
-              className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
-            />
+            <div className="flex items-center space-x-4">
+              <img 
+                src="/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png" 
+                alt="IKSC Logo" 
+                className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
+              />
+              <img 
+                src="/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png" 
+                alt="KARE Logo" 
+                className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
+              />
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-white text-sm md:text-base">
+                Welcome, {user.user_metadata?.full_name || user.email}!
+              </div>
+              <Button 
+                onClick={handleSignOut}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm rounded-lg"
+              >
+                Sign Out
+              </Button>
+            </div>
           </div>
           
           <div className="text-center space-y-6 max-w-4xl mx-auto">
