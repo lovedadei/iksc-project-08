@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
 import PledgeSuccessModal from '../components/PledgeSuccessModal';
+import AuthenticatedHeader from '../components/AuthenticatedHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
