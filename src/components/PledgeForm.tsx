@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PledgeFormProps {
   onPledgeSubmit: (pledgeData: {
@@ -17,9 +18,9 @@ interface PledgeFormProps {
 }
 
 const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
     referralCode: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,30 +52,12 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
     }
   }, []);
 
-  const blockedDomains = [
-    'tempmail.com',
-    '10minutemail.com',
-    'guerrillamail.com',
-    'mailinator.com',
-    'throwaway.email',
-    'temp-mail.org',
-    'disposablemail.com',
-    'fakeinbox.com'
-  ];
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
+  // Auto-fill user's name from Google profile
+  useEffect(() => {
+    if (user?.user_metadata?.full_name) {
+      setFormData(prev => ({ ...prev, fullName: user.user_metadata.full_name }));
     }
-    
-    const domain = email.split('@')[1]?.toLowerCase();
-    if (blockedDomains.includes(domain)) {
-      return 'Temporary email addresses are not allowed';
-    }
-    
-    return '';
-  };
+  }, [user]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -85,13 +68,8 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
       newErrors.fullName = 'Full name must be at least 2 characters';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else {
-      const emailError = validateEmail(formData.email.trim());
-      if (emailError) {
-        newErrors.email = emailError;
-      }
+    if (!user?.email) {
+      newErrors.email = 'Please sign in to make a pledge';
     }
 
     setErrors(newErrors);
@@ -101,19 +79,19 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isSubmitEnabled || isSubmitting) return;
+    if (!isSubmitEnabled || isSubmitting || !user?.email) return;
     
     if (validateForm()) {
       setIsSubmitting(true);
       
       try {
-        const normalizedEmail = formData.email.trim().toLowerCase();
+        const userEmail = user.email;
         
         // Check if email already exists with better error handling
         const { data: existingPledges, error: checkError } = await supabase
           .from('pledges')
           .select('id, referral_code, full_name')
-          .eq('email', normalizedEmail)
+          .eq('email', userEmail)
           .maybeSingle();
 
         if (checkError) {
@@ -137,7 +115,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           // Still trigger success with existing pledge data
           onPledgeSubmit({
             fullName: existingPledges.full_name,
-            email: normalizedEmail,
+            email: userEmail,
             referralCode: existingPledges.referral_code || '',
             pledgeId: existingPledges.id
           });
@@ -167,12 +145,12 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         }
 
-        // Create new pledge with normalized email
+        // Create new pledge with authenticated user's email
         const { data: newPledge, error: pledgeError } = await supabase
           .from('pledges')
           .insert({
             full_name: formData.fullName.trim(),
-            email: normalizedEmail,
+            email: userEmail,
             referral_code: referralCode
           })
           .select()
@@ -234,12 +212,12 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
         }
 
         // Reset form
-        setFormData({ fullName: '', email: '', referralCode: '' });
+        setFormData({ fullName: '', referralCode: '' });
         
         // Call onPledgeSubmit with the new pledge data
         onPledgeSubmit({
           fullName: formData.fullName.trim(),
-          email: normalizedEmail,
+          email: userEmail,
           referralCode: referralCode,
           pledgeId: newPledge.id
         });
@@ -280,6 +258,14 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
         </p>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
+        {user && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-green-700">
+              <span className="font-medium">Signed in as:</span> {user.email}
+            </p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName" className="text-gray-700 font-medium">
@@ -301,25 +287,6 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-700 font-medium">
-              Email Address *
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="Enter your email"
-              className={`transition-all duration-200 ${
-                errors.email ? 'border-red-500 focus:border-red-500' : 'focus:border-nature-green'
-              }`}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="referralCode" className="text-gray-700 font-medium">
               Referral Code (Optional)
             </Label>
@@ -335,15 +302,17 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
           <Button
             type="submit"
-            disabled={!isSubmitEnabled || isSubmitting}
+            disabled={!isSubmitEnabled || isSubmitting || !user}
             className={`w-full py-3 text-lg font-semibold transition-all duration-300 ${
-              isSubmitEnabled && !isSubmitting
+              isSubmitEnabled && !isSubmitting && user
                 ? 'bg-nature-green hover:bg-nature-green/90 text-white'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
             {isSubmitting ? (
               'Submitting...'
+            ) : !user ? (
+              'Please Sign In First'
             ) : !isSubmitEnabled ? (
               `Wait ${countdown}s to submit`
             ) : (
