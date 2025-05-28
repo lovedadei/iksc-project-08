@@ -2,75 +2,40 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@supabase/supabase-js';
 
 const Auth = () => {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Handle OAuth callback from URL hash
-    const handleAuthCallback = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-          return;
-        }
-
-        if (data.session?.user) {
-          console.log('User found in session:', data.session.user.email);
-          setUser(data.session.user);
-          toast({
-            title: "Welcome!",
-            description: `Successfully signed in as ${data.session.user.user_metadata?.full_name || data.session.user.email}`,
-          });
-          // Clear the URL hash and navigate to home
-          window.history.replaceState({}, document.title, window.location.pathname);
-          navigate('/', { replace: true });
-          return;
-        }
-      } catch (error) {
-        console.error('Error handling auth callback:', error);
-      }
-    };
-
-    // Check if there's a hash in the URL (OAuth callback)
-    if (window.location.hash && window.location.hash.includes('access_token')) {
-      console.log('OAuth callback detected, processing...');
-      handleAuthCallback();
-      return;
-    }
-
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        navigate('/', { replace: true });
+        navigate('/');
       }
     };
 
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, session?.user?.email);
-      
-      if (event === 'SIGNED_IN' && session?.user) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
         setUser(session.user);
-        toast({
-          title: "Welcome!",
-          description: `Successfully signed in as ${session.user.user_metadata?.full_name || session.user.email}`,
-        });
-        // Clear any hash in URL and navigate to home
-        window.history.replaceState({}, document.title, window.location.pathname);
-        navigate('/', { replace: true });
-      } else if (event === 'SIGNED_OUT') {
+        navigate('/');
+      } else {
         setUser(null);
       }
     });
@@ -78,13 +43,64 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          toast({
+            title: "Account created successfully!",
+            description: "Please check your email to verify your account.",
+          });
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully signed in.",
+          });
+          navigate('/');
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Authentication Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleAuth = async () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: `${window.location.origin}/`,
         }
       });
 
@@ -95,6 +111,7 @@ const Auth = () => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -134,10 +151,10 @@ const Auth = () => {
             />
           </div>
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
-            Join Bloom for Lungs
+            {isSignUp ? 'Join Bloom for Lungs' : 'Welcome Back'}
           </CardTitle>
           <p className="text-gray-600">
-            Sign in with Google to start your tobacco-free journey
+            {isSignUp ? 'Create your account to start your tobacco-free journey' : 'Sign in to continue your healthy journey'}
           </p>
         </CardHeader>
 
@@ -146,19 +163,92 @@ const Auth = () => {
           <Button
             onClick={handleGoogleAuth}
             disabled={loading}
-            className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 shadow-sm transition-all duration-200 py-3 text-lg"
+            className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 shadow-sm transition-all duration-200"
           >
-            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            {loading ? 'Signing in...' : 'Continue with Google'}
+            Continue with Google
           </Button>
 
-          <div className="text-center text-sm text-gray-500">
-            By signing in, you agree to join the Bloom for Lungs community and commit to a tobacco-free lifestyle.
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500">Or continue with email</span>
+            </div>
+          </div>
+
+          {/* Email/Password Form */}
+          <form onSubmit={handleEmailAuth} className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-gray-700 font-medium">
+                  Full Name
+                </Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  required={isSignUp}
+                  className="focus:border-green-500 transition-colors"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-700 font-medium">
+                Email Address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="focus:border-green-500 transition-colors"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-700 font-medium">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="focus:border-green-500 transition-colors"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 font-semibold transition-all duration-300"
+            >
+              {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
+            </Button>
+          </form>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-green-600 hover:text-green-700 font-medium transition-colors"
+            >
+              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+            </button>
           </div>
         </CardContent>
       </Card>
