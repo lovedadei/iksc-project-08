@@ -18,22 +18,25 @@ const Auth = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        navigate('/');
+        navigate('/', { replace: true });
       }
     };
 
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
         toast({
           title: "Welcome!",
-          description: "You have successfully signed in with Google.",
+          description: `Successfully signed in as ${session.user.user_metadata?.full_name || session.user.email}`,
         });
-        navigate('/');
-      } else {
+        // Use replace to avoid back button issues
+        navigate('/', { replace: true });
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
     });
@@ -47,7 +50,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: window.location.origin,
         }
       });
 
@@ -58,7 +61,6 @@ const Auth = () => {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
