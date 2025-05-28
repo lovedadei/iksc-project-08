@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,10 +36,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Handle successful sign-in
         if (event === 'SIGNED_IN' && session) {
-          // Clear any URL params after successful login to hide tokens
-          if (window.location.search.includes('access_token') || window.location.search.includes('refresh_token')) {
-            window.history.replaceState({}, document.title, window.location.pathname);
+          // Preserve referral code from URL params after login
+          const urlParams = new URLSearchParams(window.location.search);
+          const refCode = urlParams.get('ref');
+          
+          // Clear auth tokens from URL but preserve referral code
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('access_token');
+          newUrl.searchParams.delete('refresh_token');
+          newUrl.searchParams.delete('expires_in');
+          newUrl.searchParams.delete('token_type');
+          newUrl.searchParams.delete('type');
+          
+          // Keep referral code if it exists
+          if (refCode) {
+            newUrl.searchParams.set('ref', refCode);
           }
+          
+          window.history.replaceState({}, document.title, newUrl.toString());
         }
 
         // Handle sign-out
@@ -62,10 +75,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
+      // Preserve referral code from current URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref');
+      
+      // Construct redirect URL with referral code
+      let redirectTo = `${window.location.origin}/`;
+      if (refCode) {
+        redirectTo += `?ref=${refCode}`;
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

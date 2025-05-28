@@ -158,25 +158,6 @@ const LoginPage = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Features */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl text-center">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-green-600/30">
-            <div className="text-2xl mb-2">🔒</div>
-            <h4 className="font-semibold text-white mb-1">Secure Authentication</h4>
-            <p className="text-green-200 text-sm">Google sign-in prevents fake users</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-green-600/30">
-            <div className="text-2xl mb-2">🌱</div>
-            <h4 className="font-semibold text-white mb-1">Real Impact</h4>
-            <p className="text-green-200 text-sm">Every pledge creates real change</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-green-600/30">
-            <div className="text-2xl mb-2">👥</div>
-            <h4 className="font-semibold text-white mb-1">Join Community</h4>
-            <p className="text-green-200 text-sm">Connect with like-minded people</p>
-          </div>
-        </div>
       </div>
     </div>
   );

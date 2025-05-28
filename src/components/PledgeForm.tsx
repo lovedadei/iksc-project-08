@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { validatePledgeForm, PledgeFormData } from '@/utils/pledgeValidation';
 import { usePledgeSubmission } from '@/hooks/usePledgeSubmission';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import PledgeFormInput from './pledge/PledgeFormInput';
 import PledgeSubmitButton from './pledge/PledgeSubmitButton';
 import UserInfoDisplay from './pledge/UserInfoDisplay';
@@ -100,6 +102,23 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
         {user && <UserInfoDisplay user={user} />}
         
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Email field - read-only and auto-filled */}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-slate-700 font-medium text-sm">
+              Email *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={user?.email || ''}
+              readOnly
+              className="bg-gray-100 border-2 border-slate-200 text-slate-600 cursor-not-allowed"
+            />
+            <p className="text-xs text-slate-500">
+              🔒 Email is automatically secured from your Google account
+            </p>
+          </div>
+
           <PledgeFormInput
             id="fullName"
             label="Full Name"
