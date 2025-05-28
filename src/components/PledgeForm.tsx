@@ -96,11 +96,11 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
       setIsSubmitting(true);
       
       try {
-        // Check if user already has a pledge - with explicit typing
+        // Check if user already has a pledge - query by email since user_id doesn't exist in pledges table
         const { data: existingPledges, error: pledgeCheckError } = await supabase
           .from('pledges')
           .select('id, referral_code, full_name')
-          .eq('user_id', user.id);
+          .eq('email', user.email || '');
 
         if (pledgeCheckError) {
           console.error('Error checking existing pledges:', pledgeCheckError);
@@ -155,14 +155,13 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         }
 
-        // Create new pledge with user_id - with explicit typing
+        // Create new pledge without user_id since it doesn't exist in the schema
         const { data: newPledges, error: insertError } = await supabase
           .from('pledges')
           .insert({
             full_name: formData.fullName.trim(),
             email: formData.email.trim(),
-            referral_code: referralCode,
-            user_id: user.id
+            referral_code: referralCode
           })
           .select('id, full_name, referral_code');
 
