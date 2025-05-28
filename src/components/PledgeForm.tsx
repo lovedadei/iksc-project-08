@@ -270,19 +270,19 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-2xl bg-gray-900/95 backdrop-blur-sm border border-gray-700 hover:shadow-3xl transition-all duration-500 hover:scale-105" id="pledge-form">
-      <CardHeader className="text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-t-lg hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 transition-all duration-300">
-        <CardTitle className="text-2xl font-bold text-white hover:scale-105 transition-transform duration-300">
+    <Card className="w-full max-w-md mx-auto shadow-xl bg-white/95 backdrop-blur-sm border-0" id="pledge-form">
+      <CardHeader className="text-center bg-bloom-gradient rounded-t-lg">
+        <CardTitle className="text-2xl font-bold text-white">
           Take the Pledge
         </CardTitle>
-        <p className="text-white/90 text-sm hover:text-white transition-colors duration-300">
+        <p className="text-white/90 text-sm">
           Join the movement for healthier lungs and a tobacco-free life
         </p>
       </CardHeader>
-      <CardContent className="p-6 space-y-4 bg-gray-800/90">
+      <CardContent className="p-6 space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-gray-200 font-medium hover:text-white transition-colors duration-300">
+            <Label htmlFor="fullName" className="text-gray-700 font-medium">
               Full Name *
             </Label>
             <Input
@@ -291,17 +291,17 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
               value={formData.fullName}
               onChange={(e) => handleInputChange('fullName', e.target.value)}
               placeholder="Enter your full name"
-              className={`transition-all duration-300 bg-gray-700 border-gray-600 text-white placeholder-gray-400 hover:bg-gray-600 focus:bg-gray-600 ${
-                errors.fullName ? 'border-red-500 focus:border-red-500' : 'focus:border-purple-500'
+              className={`transition-all duration-200 ${
+                errors.fullName ? 'border-red-500 focus:border-red-500' : 'focus:border-nature-green'
               }`}
             />
             {errors.fullName && (
-              <p className="text-red-400 text-sm animate-fade-in">{errors.fullName}</p>
+              <p className="text-red-500 text-sm">{errors.fullName}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-200 font-medium hover:text-white transition-colors duration-300">
+            <Label htmlFor="email" className="text-gray-700 font-medium">
               Email Address *
             </Label>
             <Input
@@ -310,17 +310,17 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Enter your email"
-              className={`transition-all duration-300 bg-gray-700 border-gray-600 text-white placeholder-gray-400 hover:bg-gray-600 focus:bg-gray-600 ${
-                errors.email ? 'border-red-500 focus:border-red-500' : 'focus:border-purple-500'
+              className={`transition-all duration-200 ${
+                errors.email ? 'border-red-500 focus:border-red-500' : 'focus:border-nature-green'
               }`}
             />
             {errors.email && (
-              <p className="text-red-400 text-sm animate-fade-in">{errors.email}</p>
+              <p className="text-red-500 text-sm">{errors.email}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="referralCode" className="text-gray-200 font-medium hover:text-white transition-colors duration-300">
+            <Label htmlFor="referralCode" className="text-gray-700 font-medium">
               Referral Code (Optional)
             </Label>
             <Input
@@ -329,7 +329,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
               value={formData.referralCode}
               onChange={(e) => handleInputChange('referralCode', e.target.value.toUpperCase())}
               placeholder="Enter referral code if you have one"
-              className="focus:border-purple-500 transition-all duration-300 bg-gray-700 border-gray-600 text-white placeholder-gray-400 hover:bg-gray-600 focus:bg-gray-600"
+              className="focus:border-nature-green transition-all duration-200"
             />
           </div>
 
@@ -338,15 +338,12 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
             disabled={!isSubmitEnabled || isSubmitting}
             className={`w-full py-3 text-lg font-semibold transition-all duration-300 ${
               isSubmitEnabled && !isSubmitting
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white hover:scale-105 hover:shadow-lg'
-                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                ? 'bg-nature-green hover:bg-nature-green/90 text-white'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
             {isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <span className="animate-spin mr-2">⏳</span>
-                Submitting...
-              </span>
+              'Submitting...'
             ) : !isSubmitEnabled ? (
               `Wait ${countdown}s to submit`
             ) : (
@@ -355,7 +352,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           </Button>
         </form>
 
-        <div className="text-center text-xs text-gray-400 mt-4 hover:text-gray-300 transition-colors duration-300">
+        <div className="text-center text-xs text-gray-500 mt-4">
           By submitting, you commit to a tobacco-free lifestyle and join our healthy lungs community
         </div>
       </CardContent>
