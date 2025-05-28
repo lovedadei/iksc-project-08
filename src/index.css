@@ -169,6 +169,12 @@
   }
 }
 
+@keyframes rainbow-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .bloom-animation {
   animation: bloom 0.8s ease-out forwards;
 }
@@ -193,6 +199,10 @@
   animation: forest-whisper 8s ease-in-out infinite;
 }
 
+.rainbow-animate {
+  animation: rainbow-shift 3s ease-in-out infinite;
+}
+
 /* Custom transition durations */
 .duration-4000 {
   transition-duration: 4000ms;
@@ -201,6 +211,17 @@
 /* Dark green gradient backgrounds */
 .bg-forest-gradient {
   background: linear-gradient(135deg, hsl(var(--forest-dark)) 0%, hsl(var(--forest-medium)) 50%, hsl(var(--forest-light)) 100%);
+}
+
+/* Rainbow gradient backgrounds */
+.bg-rainbow-gradient {
+  background: linear-gradient(270deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff);
+  background-size: 400% 400%;
+}
+
+.bg-rainbow-border {
+  background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff, #ff6b6b);
+  background-size: 200% 200%;
 }
 
 /* Backdrop blur utilities for glass morphism effect */

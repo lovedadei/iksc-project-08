@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface PledgeFormProps {
   onPledgeSubmit: (pledgeData: {
@@ -17,14 +16,7 @@ interface PledgeFormProps {
   }) => void;
 }
 
-interface PledgeData {
-  id: string;
-  referral_code: string | null;
-  full_name: string;
-}
-
 const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
-  const { user } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -34,17 +26,6 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   const [isSubmitEnabled, setIsSubmitEnabled] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Pre-fill form with user data
-  useEffect(() => {
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        fullName: user.user_metadata?.full_name || '',
-        email: user.email || ''
-      }));
-    }
-  }, [user]);
 
   // Handle 30-second wait timer
   useEffect(() => {
@@ -70,6 +51,31 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
     }
   }, []);
 
+  const blockedDomains = [
+    'tempmail.com',
+    '10minutemail.com',
+    'guerrillamail.com',
+    'mailinator.com',
+    'throwaway.email',
+    'temp-mail.org',
+    'disposablemail.com',
+    'fakeinbox.com'
+  ];
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address';
+    }
+    
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (blockedDomains.includes(domain)) {
+      return 'Temporary email addresses are not allowed';
+    }
+    
+    return '';
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -81,6 +87,11 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
+    } else {
+      const emailError = validateEmail(formData.email.trim());
+      if (emailError) {
+        newErrors.email = emailError;
+      }
     }
 
     setErrors(newErrors);
@@ -90,20 +101,23 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isSubmitEnabled || isSubmitting || !user) return;
+    if (!isSubmitEnabled || isSubmitting) return;
     
     if (validateForm()) {
       setIsSubmitting(true);
       
       try {
-        // Check if user already has a pledge - with explicit typing
-        const { data: existingPledges, error: pledgeCheckError } = await supabase
+        const normalizedEmail = formData.email.trim().toLowerCase();
+        
+        // Check if email already exists with better error handling
+        const { data: existingPledges, error: checkError } = await supabase
           .from('pledges')
           .select('id, referral_code, full_name')
-          .eq('user_id', user.id);
+          .eq('email', normalizedEmail)
+          .maybeSingle();
 
-        if (pledgeCheckError) {
-          console.error('Error checking existing pledges:', pledgeCheckError);
+        if (checkError) {
+          console.error('Error checking existing pledges:', checkError);
           toast({
             title: "Error checking existing pledges",
             description: "Please try again later.",
@@ -113,21 +127,19 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           return;
         }
 
-        const existingPledge = existingPledges?.[0] as PledgeData | undefined;
-
-        if (existingPledge) {
+        if (existingPledges) {
           // User already pledged
           toast({
             title: "You've already made a pledge!",
-            description: `Welcome back, ${existingPledge.full_name}! Thank you for your continued commitment.`,
+            description: `Welcome back, ${existingPledges.full_name}! Thank you for your continued commitment.`,
           });
           
           // Still trigger success with existing pledge data
           onPledgeSubmit({
-            fullName: existingPledge.full_name,
-            email: formData.email,
-            referralCode: existingPledge.referral_code || '',
-            pledgeId: existingPledge.id
+            fullName: existingPledges.full_name,
+            email: normalizedEmail,
+            referralCode: existingPledges.referral_code || '',
+            pledgeId: existingPledges.id
           });
           
           setIsSubmitting(false);
@@ -137,16 +149,16 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
         // Generate referral code
         let referralCode = '';
         try {
-          const { data: generatedCode, error: codeError } = await supabase
+          const { data: referralCodeData, error: referralCodeError } = await supabase
             .rpc('generate_referral_code', { user_name: formData.fullName });
 
-          if (codeError) {
-            console.error('Error generating referral code:', codeError);
+          if (referralCodeError) {
+            console.error('Error generating referral code:', referralCodeError);
             // Fallback to manual generation
             const cleanName = formData.fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
             referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
           } else {
-            referralCode = generatedCode || '';
+            referralCode = referralCodeData;
           }
         } catch (error) {
           console.error('Error calling generate_referral_code function:', error);
@@ -155,36 +167,32 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         }
 
-        // Create new pledge with user_id - with explicit typing
-        const { data: newPledges, error: insertError } = await supabase
+        // Create new pledge with normalized email
+        const { data: newPledge, error: pledgeError } = await supabase
           .from('pledges')
           .insert({
             full_name: formData.fullName.trim(),
-            email: formData.email.trim(),
-            referral_code: referralCode,
-            user_id: user.id
+            email: normalizedEmail,
+            referral_code: referralCode
           })
-          .select('id, full_name, referral_code');
+          .select()
+          .single();
 
-        if (insertError) {
-          console.error('Error creating pledge:', insertError);
-          toast({
-            title: "Error creating pledge",
-            description: "Please try again later.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-
-        const newPledge = newPledges?.[0] as PledgeData | undefined;
-        if (!newPledge) {
-          console.error('No pledge data returned');
-          toast({
-            title: "Error creating pledge",
-            description: "Please try again later.",
-            variant: "destructive"
-          });
+        if (pledgeError) {
+          console.error('Error creating pledge:', pledgeError);
+          if (pledgeError.code === '23505') { // Unique constraint violation
+            toast({
+              title: "Email already exists",
+              description: "This email has already been used for a pledge.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Error creating pledge",
+              description: "Please try again later.",
+              variant: "destructive"
+            });
+          }
           setIsSubmitting(false);
           return;
         }
@@ -193,47 +201,45 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
         // Handle referral if there's a referral code
         if (formData.referralCode.trim()) {
-          const { data: referrerPledges, error: referrerError } = await supabase
+          const { data: referrerPledge, error: referrerError } = await supabase
             .from('pledges')
             .select('id, full_name')
-            .eq('referral_code', formData.referralCode.trim());
+            .eq('referral_code', formData.referralCode.trim())
+            .maybeSingle();
 
           if (referrerError) {
             console.error('Error finding referrer:', referrerError);
-          } else {
-            const referrerPledge = referrerPledges?.[0];
-            if (referrerPledge) {
-              // Add referral record
-              const { error: referralInsertError } = await supabase
-                .from('referrals')
-                .insert({
-                  referrer_pledge_id: referrerPledge.id,
-                  referred_pledge_id: newPledge.id,
-                  referral_code: formData.referralCode.trim()
-                });
+          } else if (referrerPledge) {
+            // Add referral record
+            const { error: referralError } = await supabase
+              .from('referrals')
+              .insert({
+                referrer_pledge_id: referrerPledge.id,
+                referred_pledge_id: newPledge.id,
+                referral_code: formData.referralCode.trim()
+              });
 
-              if (referralInsertError) {
-                console.error('Error creating referral:', referralInsertError);
-              } else {
-                console.log('Referral created successfully for referrer:', referrerPledge.full_name);
-                toast({
-                  title: "Referral bonus!",
-                  description: `You were referred by ${referrerPledge.full_name}. Thank you for joining!`,
-                });
-              }
+            if (referralError) {
+              console.error('Error creating referral:', referralError);
             } else {
-              console.log('Referral code not found:', formData.referralCode);
+              console.log('Referral created successfully for referrer:', referrerPledge.full_name);
+              toast({
+                title: "Referral bonus!",
+                description: `You were referred by ${referrerPledge.full_name}. Thank you for joining!`,
+              });
             }
+          } else {
+            console.log('Referral code not found:', formData.referralCode);
           }
         }
 
         // Reset form
-        setFormData(prev => ({ ...prev, referralCode: '' }));
+        setFormData({ fullName: '', email: '', referralCode: '' });
         
         // Call onPledgeSubmit with the new pledge data
         onPledgeSubmit({
           fullName: formData.fullName.trim(),
-          email: formData.email.trim(),
+          email: normalizedEmail,
           referralCode: referralCode,
           pledgeId: newPledge.id
         });
@@ -264,92 +270,124 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl bg-white/95 backdrop-blur-sm border-0" id="pledge-form">
-      <CardHeader className="text-center bg-bloom-gradient rounded-t-lg">
-        <CardTitle className="text-2xl font-bold text-white">
-          Take the Pledge
-        </CardTitle>
-        <p className="text-white/90 text-sm">
-          Join the movement for healthier lungs and a tobacco-free life
-        </p>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-gray-700 font-medium">
-              Full Name *
-            </Label>
-            <Input
-              id="fullName"
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => handleInputChange('fullName', e.target.value)}
-              placeholder="Enter your full name"
-              className={`transition-all duration-200 ${
-                errors.fullName ? 'border-red-500 focus:border-red-500' : 'focus:border-nature-green'
-              }`}
-            />
-            {errors.fullName && (
-              <p className="text-red-500 text-sm">{errors.fullName}</p>
-            )}
+    <Card className="w-full max-w-md mx-auto shadow-2xl bg-white/95 backdrop-blur-sm border-0 relative overflow-hidden" id="pledge-form">
+      {/* Rainbow border effect */}
+      <div className="absolute inset-0 bg-rainbow-border rainbow-animate rounded-lg p-1">
+        <div className="bg-white rounded-lg h-full w-full"></div>
+      </div>
+      
+      <div className="relative z-10">
+        <CardHeader className="text-center bg-rainbow-gradient rainbow-animate rounded-t-lg">
+          <CardTitle className="text-2xl font-bold text-white drop-shadow-lg">
+            Take the Pledge
+          </CardTitle>
+          <p className="text-white/90 text-sm font-medium drop-shadow">
+            Join the movement for healthier lungs and a tobacco-free life
+          </p>
+        </CardHeader>
+        
+        <CardContent className="p-6 space-y-6 bg-white rounded-b-lg">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-3">
+              <Label htmlFor="fullName" className="text-gray-700 font-semibold text-sm">
+                Full Name *
+              </Label>
+              <div className="relative">
+                <div className="absolute inset-0 bg-rainbow-gradient opacity-20 rounded-md blur-sm"></div>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  placeholder="Enter your full name"
+                  className={`relative z-10 transition-all duration-300 border-2 focus:border-transparent focus:ring-2 focus:ring-offset-2 ${
+                    errors.fullName 
+                      ? 'border-red-400 focus:ring-red-400' 
+                      : 'border-gray-200 hover:border-gray-300 focus:ring-blue-400'
+                  }`}
+                />
+              </div>
+              {errors.fullName && (
+                <p className="text-red-500 text-sm font-medium">{errors.fullName}</p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
+                Email Address *
+              </Label>
+              <div className="relative">
+                <div className="absolute inset-0 bg-rainbow-gradient opacity-20 rounded-md blur-sm"></div>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="Enter your email"
+                  className={`relative z-10 transition-all duration-300 border-2 focus:border-transparent focus:ring-2 focus:ring-offset-2 ${
+                    errors.email 
+                      ? 'border-red-400 focus:ring-red-400' 
+                      : 'border-gray-200 hover:border-gray-300 focus:ring-purple-400'
+                  }`}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-red-500 text-sm font-medium">{errors.email}</p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="referralCode" className="text-gray-700 font-semibold text-sm">
+                Referral Code (Optional)
+              </Label>
+              <div className="relative">
+                <div className="absolute inset-0 bg-rainbow-gradient opacity-15 rounded-md blur-sm"></div>
+                <Input
+                  id="referralCode"
+                  type="text"
+                  value={formData.referralCode}
+                  onChange={(e) => handleInputChange('referralCode', e.target.value.toUpperCase())}
+                  placeholder="Enter referral code if you have one"
+                  className="relative z-10 border-2 border-gray-200 hover:border-gray-300 focus:border-transparent focus:ring-2 focus:ring-green-400 focus:ring-offset-2 transition-all duration-300"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              {isSubmitEnabled && !isSubmitting ? (
+                <div className="relative">
+                  <div className="absolute inset-0 bg-rainbow-gradient rounded-xl blur-sm opacity-75"></div>
+                  <Button
+                    type="submit"
+                    className="relative z-10 w-full py-4 text-lg font-bold bg-rainbow-gradient rainbow-animate text-white rounded-xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                  >
+                    🌈 Make My Pledge 🌸
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={true}
+                  className="w-full py-4 text-lg font-semibold bg-gray-300 text-gray-500 cursor-not-allowed rounded-xl"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                      Submitting...
+                    </span>
+                  ) : (
+                    `Wait ${countdown}s to submit`
+                  )}
+                </Button>
+              )}
+            </div>
+          </form>
+
+          <div className="text-center text-xs text-gray-500 pt-2 border-t border-gray-100">
+            By submitting, you commit to a tobacco-free lifestyle and join our healthy lungs community
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-700 font-medium">
-              Email Address *
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="Enter your email"
-              disabled={true}
-              className="bg-gray-50 cursor-not-allowed"
-            />
-            <p className="text-xs text-gray-500">Email is pre-filled from your account</p>
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="referralCode" className="text-gray-700 font-medium">
-              Referral Code (Optional)
-            </Label>
-            <Input
-              id="referralCode"
-              type="text"
-              value={formData.referralCode}
-              onChange={(e) => handleInputChange('referralCode', e.target.value.toUpperCase())}
-              placeholder="Enter referral code if you have one"
-              className="focus:border-nature-green transition-all duration-200"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            disabled={!isSubmitEnabled || isSubmitting}
-            className={`w-full py-3 text-lg font-semibold transition-all duration-300 ${
-              isSubmitEnabled && !isSubmitting
-                ? 'bg-nature-green hover:bg-nature-green/90 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            {isSubmitting ? (
-              'Submitting...'
-            ) : !isSubmitEnabled ? (
-              `Wait ${countdown}s to submit`
-            ) : (
-              '🌸 Make My Pledge'
-            )}
-          </Button>
-        </form>
-
-        <div className="text-center text-xs text-gray-500 mt-4">
-          By submitting, you commit to a tobacco-free lifestyle and join our healthy lungs community
-        </div>
-      </CardContent>
+        </CardContent>
+      </div>
     </Card>
   );
 };

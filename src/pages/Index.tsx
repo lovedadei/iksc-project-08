@@ -1,17 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
 import PledgeSuccessModal from '../components/PledgeSuccessModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
-  const navigate = useNavigate();
   const [pledgeCount, setPledgeCount] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [shouldAnimateLungs, setShouldAnimateLungs] = useState(false);
@@ -20,13 +16,6 @@ const Index = () => {
     referralLink: '',
     pledgeId: ''
   });
-
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
 
   // Fetch pledge count on component mount
   useEffect(() => {
@@ -95,25 +84,6 @@ const Index = () => {
     }, 3000);
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
-
-  // Show loading while checking auth
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-700 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  // If not authenticated, the useEffect will redirect to auth
-  if (!user) {
-    return null;
-  }
-
   const stats = [
     { label: 'Total Pledges', value: pledgeCount, icon: '🌸' },
     { label: 'Lives Impacted', value: pledgeCount * 3, icon: '❤️' },
@@ -123,27 +93,34 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-700 relative overflow-hidden">
-      {/* Background Images */}
+      {/* Properly positioned background Images */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-0 left-0 w-1/3 h-1/2 opacity-20">
+        <div className="absolute top-10 left-10 w-80 h-60 opacity-10">
           <img 
             src="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
             alt="Forest background" 
-            className="w-full h-full object-cover rounded-br-3xl"
+            className="w-full h-full object-cover rounded-3xl"
           />
         </div>
-        <div className="absolute bottom-0 right-0 w-1/2 h-1/3 opacity-15">
+        <div className="absolute bottom-10 right-10 w-96 h-64 opacity-12">
           <img 
             src="https://images.unsplash.com/photo-1518495973542-4542c06a5843?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
             alt="Nature background" 
-            className="w-full h-full object-cover rounded-tl-3xl"
+            className="w-full h-full object-cover rounded-3xl"
           />
         </div>
-        <div className="absolute top-1/4 right-1/4 w-1/4 h-1/4 opacity-10">
+        <div className="absolute top-1/3 right-1/3 w-48 h-48 opacity-8">
           <img 
             src="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
             alt="Pine trees" 
             className="w-full h-full object-cover rounded-full"
+          />
+        </div>
+        <div className="absolute bottom-1/4 left-1/4 w-56 h-40 opacity-8">
+          <img 
+            src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+            alt="Forest path" 
+            className="w-full h-full object-cover rounded-2xl"
           />
         </div>
       </div>
@@ -151,31 +128,18 @@ const Index = () => {
       {/* Hero Section */}
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-8 md:py-16">
-          {/* Header with Logos and Sign Out */}
+          {/* Header with Logos */}
           <div className="flex justify-between items-center mb-8 md:mb-16">
-            <div className="flex items-center space-x-4">
-              <img 
-                src="/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png" 
-                alt="IKSC Logo" 
-                className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
-              />
-              <img 
-                src="/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png" 
-                alt="KARE Logo" 
-                className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
-              />
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-white text-sm md:text-base">
-                Welcome, {user.user_metadata?.full_name || user.email}!
-              </div>
-              <Button 
-                onClick={handleSignOut}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm rounded-lg"
-              >
-                Sign Out
-              </Button>
-            </div>
+            <img 
+              src="/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png" 
+              alt="IKSC Logo" 
+              className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
+            />
+            <img 
+              src="/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png" 
+              alt="KARE Logo" 
+              className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
+            />
           </div>
           
           <div className="text-center space-y-6 max-w-4xl mx-auto">
