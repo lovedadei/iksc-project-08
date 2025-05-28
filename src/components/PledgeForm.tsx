@@ -17,6 +17,12 @@ interface PledgeFormProps {
   }) => void;
 }
 
+interface PledgeData {
+  id: string;
+  referral_code: string | null;
+  full_name: string;
+}
+
 const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -90,15 +96,14 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
       setIsSubmitting(true);
       
       try {
-        // Check if user already has a pledge - simplified query
-        const existingPledgeResult = await supabase
+        // Check if user already has a pledge - with explicit typing
+        const { data: existingPledges, error: pledgeCheckError } = await supabase
           .from('pledges')
           .select('id, referral_code, full_name')
-          .eq('user_id', user.id)
-          .limit(1);
+          .eq('user_id', user.id);
 
-        if (existingPledgeResult.error) {
-          console.error('Error checking existing pledges:', existingPledgeResult.error);
+        if (pledgeCheckError) {
+          console.error('Error checking existing pledges:', pledgeCheckError);
           toast({
             title: "Error checking existing pledges",
             description: "Please try again later.",
@@ -108,7 +113,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           return;
         }
 
-        const existingPledge = existingPledgeResult.data?.[0];
+        const existingPledge = existingPledges?.[0] as PledgeData | undefined;
 
         if (existingPledge) {
           // User already pledged
@@ -132,16 +137,16 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
         // Generate referral code
         let referralCode = '';
         try {
-          const referralCodeResult = await supabase
+          const { data: generatedCode, error: codeError } = await supabase
             .rpc('generate_referral_code', { user_name: formData.fullName });
 
-          if (referralCodeResult.error) {
-            console.error('Error generating referral code:', referralCodeResult.error);
+          if (codeError) {
+            console.error('Error generating referral code:', codeError);
             // Fallback to manual generation
             const cleanName = formData.fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
             referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
           } else {
-            referralCode = referralCodeResult.data || '';
+            referralCode = generatedCode || '';
           }
         } catch (error) {
           console.error('Error calling generate_referral_code function:', error);
@@ -150,8 +155,8 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         }
 
-        // Create new pledge with user_id - simplified query
-        const newPledgeResult = await supabase
+        // Create new pledge with user_id - with explicit typing
+        const { data: newPledges, error: insertError } = await supabase
           .from('pledges')
           .insert({
             full_name: formData.fullName.trim(),
@@ -159,11 +164,10 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
             referral_code: referralCode,
             user_id: user.id
           })
-          .select()
-          .limit(1);
+          .select('id, full_name, referral_code');
 
-        if (newPledgeResult.error) {
-          console.error('Error creating pledge:', newPledgeResult.error);
+        if (insertError) {
+          console.error('Error creating pledge:', insertError);
           toast({
             title: "Error creating pledge",
             description: "Please try again later.",
@@ -173,7 +177,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           return;
         }
 
-        const newPledge = newPledgeResult.data?.[0];
+        const newPledge = newPledges?.[0] as PledgeData | undefined;
         if (!newPledge) {
           console.error('No pledge data returned');
           toast({
@@ -189,19 +193,18 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
         // Handle referral if there's a referral code
         if (formData.referralCode.trim()) {
-          const referrerResult = await supabase
+          const { data: referrerPledges, error: referrerError } = await supabase
             .from('pledges')
             .select('id, full_name')
-            .eq('referral_code', formData.referralCode.trim())
-            .limit(1);
+            .eq('referral_code', formData.referralCode.trim());
 
-          if (referrerResult.error) {
-            console.error('Error finding referrer:', referrerResult.error);
+          if (referrerError) {
+            console.error('Error finding referrer:', referrerError);
           } else {
-            const referrerPledge = referrerResult.data?.[0];
+            const referrerPledge = referrerPledges?.[0];
             if (referrerPledge) {
               // Add referral record
-              const referralResult = await supabase
+              const { error: referralInsertError } = await supabase
                 .from('referrals')
                 .insert({
                   referrer_pledge_id: referrerPledge.id,
@@ -209,8 +212,8 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
                   referral_code: formData.referralCode.trim()
                 });
 
-              if (referralResult.error) {
-                console.error('Error creating referral:', referralResult.error);
+              if (referralInsertError) {
+                console.error('Error creating referral:', referralInsertError);
               } else {
                 console.log('Referral created successfully for referrer:', referrerPledge.full_name);
                 toast({
