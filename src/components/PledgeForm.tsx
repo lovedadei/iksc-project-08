@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,12 +34,12 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   const [countdown, setCountdown] = useState(30);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Pre-fill form with user data
+  // Pre-fill form with user data from Google
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
         ...prev,
-        fullName: user.user_metadata?.full_name || '',
+        fullName: user.user_metadata?.full_name || user.user_metadata?.name || '',
         email: user.email || ''
       }));
     }
@@ -288,6 +287,9 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
                 errors.fullName ? 'border-red-500 focus:border-red-500' : 'focus:border-nature-green'
               }`}
             />
+            {formData.fullName && (
+              <p className="text-xs text-green-600">✓ Name automatically filled from your Google account</p>
+            )}
             {errors.fullName && (
               <p className="text-red-500 text-sm">{errors.fullName}</p>
             )}
@@ -306,7 +308,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
               disabled={true}
               className="bg-gray-50 cursor-not-allowed"
             />
-            <p className="text-xs text-gray-500">Email is pre-filled from your account</p>
+            <p className="text-xs text-gray-500">Email is pre-filled from your Google account</p>
             {errors.email && (
               <p className="text-red-500 text-sm">{errors.email}</p>
             )}
@@ -324,6 +326,9 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
               placeholder="Enter referral code if you have one"
               className="focus:border-nature-green transition-all duration-200"
             />
+            {formData.referralCode && (
+              <p className="text-xs text-green-600">✓ Referral code entered</p>
+            )}
           </div>
 
           <Button
