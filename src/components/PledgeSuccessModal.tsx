@@ -172,7 +172,7 @@ const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-center text-3xl font-bold bg-bloom-gradient bg-clip-text text-transparent">
+          <DialogTitle className="text-center text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             🌸 Congratulations, {userName}! 🌸
           </DialogTitle>
         </DialogHeader>
@@ -199,11 +199,11 @@ const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
               You've joined the IKSC KARE Bloom for Lungs movement!
             </h3>
             <p className="text-gray-600">
-              Thank you for pledging to a tobacco-free lifestyle. Your commitment helps create a healthier world for everyone.
+              Thank you for pledging to a tobacco-free lifestyle.
             </p>
           </div>
 
-          <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+          <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
             <CardContent className="p-4">
               <h4 className="font-semibold text-gray-800 mb-2">🎁 Your Pledge Rewards:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
@@ -236,7 +236,7 @@ const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button 
               onClick={downloadBloomGraphic}
-              className="bg-bloom-pink hover:bg-bloom-pink/90 text-gray-800 py-3"
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white py-3"
             >
               📱 Download Your IKSC KARE Bloom
             </Button>
@@ -249,19 +249,20 @@ const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
             </Button>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
             <h4 className="font-semibold text-gray-800 mb-2">🔗 Your Referral Link:</h4>
             <div className="flex items-center gap-2">
               <input 
                 type="text" 
                 value={referralLink} 
                 readOnly 
-                className="flex-1 px-3 py-2 bg-white border rounded text-sm"
+                className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded text-sm"
               />
               <Button 
                 onClick={copyReferralLink}
                 variant="outline"
                 size="sm"
+                className="hover:bg-emerald-50 hover:border-emerald-300"
               >
                 Copy
               </Button>
@@ -273,7 +274,7 @@ const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
 
           <Button 
             onClick={onClose}
-            className="w-full bg-nature-green hover:bg-nature-green/90 text-white py-3"
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-3"
           >
             Continue to Garden 🌱
           </Button>

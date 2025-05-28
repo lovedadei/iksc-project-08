@@ -87,7 +87,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
       try {
         const userEmail = user.email;
         
-        // Check if email already exists with better error handling
+        // Check if email already exists
         const { data: existingPledges, error: checkError } = await supabase
           .from('pledges')
           .select('id, referral_code, full_name')
@@ -106,13 +106,11 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
         }
 
         if (existingPledges) {
-          // User already pledged
           toast({
             title: "You've already made a pledge!",
-            description: `Welcome back, ${existingPledges.full_name}! Thank you for your continued commitment.`,
+            description: `Welcome back, ${existingPledges.full_name}! Thank you for your commitment.`,
           });
           
-          // Still trigger success with existing pledge data
           onPledgeSubmit({
             fullName: existingPledges.full_name,
             email: userEmail,
@@ -132,7 +130,6 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
           if (referralCodeError) {
             console.error('Error generating referral code:', referralCodeError);
-            // Fallback to manual generation
             const cleanName = formData.fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
             referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
           } else {
@@ -140,12 +137,11 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           }
         } catch (error) {
           console.error('Error calling generate_referral_code function:', error);
-          // Fallback to manual generation
           const cleanName = formData.fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
           referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         }
 
-        // Create new pledge with authenticated user's email
+        // Create new pledge
         const { data: newPledge, error: pledgeError } = await supabase
           .from('pledges')
           .insert({
@@ -158,7 +154,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
         if (pledgeError) {
           console.error('Error creating pledge:', pledgeError);
-          if (pledgeError.code === '23505') { // Unique constraint violation
+          if (pledgeError.code === '23505') {
             toast({
               title: "Email already exists",
               description: "This email has already been used for a pledge.",
@@ -188,7 +184,6 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           if (referrerError) {
             console.error('Error finding referrer:', referrerError);
           } else if (referrerPledge) {
-            // Add referral record
             const { error: referralError } = await supabase
               .from('referrals')
               .insert({
@@ -248,27 +243,42 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl bg-white/95 backdrop-blur-sm border-0" id="pledge-form">
-      <CardHeader className="text-center bg-bloom-gradient rounded-t-lg">
-        <CardTitle className="text-2xl font-bold text-white">
-          Take the Pledge
-        </CardTitle>
-        <p className="text-white/90 text-sm">
-          Join the movement for healthier lungs and a tobacco-free life
-        </p>
+    <Card className="w-full max-w-md mx-auto shadow-2xl bg-gradient-to-br from-slate-50 to-white border-0 overflow-hidden" id="pledge-form">
+      <CardHeader className="text-center bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-cyan-400/20"></div>
+        <div className="relative z-10">
+          <CardTitle className="text-2xl font-bold mb-2">
+            🌸 Take the Pledge
+          </CardTitle>
+          <p className="text-white/90 text-sm leading-relaxed">
+            Join the movement for healthier lungs
+          </p>
+        </div>
       </CardHeader>
-      <CardContent className="p-6 space-y-4">
+      <CardContent className="p-6 space-y-5">
         {user && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-green-700">
-              <span className="font-medium">Signed in as:</span> {user.email}
-            </p>
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 mb-4">
+            <div className="flex items-center space-x-3">
+              {user.user_metadata?.avatar_url && (
+                <img 
+                  src={user.user_metadata.avatar_url} 
+                  alt="Profile" 
+                  className="w-10 h-10 rounded-full border-2 border-emerald-300"
+                />
+              )}
+              <div>
+                <p className="text-sm font-medium text-emerald-800">
+                  Signed in as: {user.email}
+                </p>
+                <p className="text-xs text-emerald-600">Email automatically secured</p>
+              </div>
+            </div>
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-gray-700 font-medium">
+            <Label htmlFor="fullName" className="text-slate-700 font-medium text-sm">
               Full Name *
             </Label>
             <Input
@@ -277,17 +287,22 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
               value={formData.fullName}
               onChange={(e) => handleInputChange('fullName', e.target.value)}
               placeholder="Enter your full name"
-              className={`transition-all duration-200 ${
-                errors.fullName ? 'border-red-500 focus:border-red-500' : 'focus:border-nature-green'
+              className={`transition-all duration-300 border-2 focus:ring-2 focus:ring-emerald-500/20 ${
+                errors.fullName 
+                  ? 'border-red-400 focus:border-red-500' 
+                  : 'border-slate-200 focus:border-emerald-500 hover:border-slate-300'
               }`}
             />
             {errors.fullName && (
-              <p className="text-red-500 text-sm">{errors.fullName}</p>
+              <p className="text-red-500 text-sm flex items-center gap-1">
+                <span className="text-xs">⚠️</span>
+                {errors.fullName}
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="referralCode" className="text-gray-700 font-medium">
+            <Label htmlFor="referralCode" className="text-slate-700 font-medium text-sm">
               Referral Code (Optional)
             </Label>
             <Input
@@ -296,21 +311,24 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
               value={formData.referralCode}
               onChange={(e) => handleInputChange('referralCode', e.target.value.toUpperCase())}
               placeholder="Enter referral code if you have one"
-              className="focus:border-nature-green transition-all duration-200"
+              className="border-2 border-slate-200 focus:border-teal-500 hover:border-slate-300 transition-all duration-300 focus:ring-2 focus:ring-teal-500/20"
             />
           </div>
 
           <Button
             type="submit"
             disabled={!isSubmitEnabled || isSubmitting || !user}
-            className={`w-full py-3 text-lg font-semibold transition-all duration-300 ${
+            className={`w-full py-3 text-lg font-semibold transition-all duration-300 transform ${
               isSubmitEnabled && !isSubmitting && user
-                ? 'bg-nature-green hover:bg-nature-green/90 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
+                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
             }`}
           >
             {isSubmitting ? (
-              'Submitting...'
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Submitting...
+              </div>
             ) : !user ? (
               'Please Sign In First'
             ) : !isSubmitEnabled ? (
@@ -321,8 +339,8 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           </Button>
         </form>
 
-        <div className="text-center text-xs text-gray-500 mt-4">
-          By submitting, you commit to a tobacco-free lifestyle and join our healthy lungs community
+        <div className="text-center text-xs text-slate-500 mt-4 leading-relaxed">
+          By submitting, you commit to a tobacco-free lifestyle
         </div>
       </CardContent>
     </Card>

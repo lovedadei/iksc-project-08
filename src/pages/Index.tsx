@@ -85,6 +85,8 @@ const Index = () => {
     }, 3000);
   };
 
+  const completionPercentage = Math.min((pledgeCount / 200) * 100, 100);
+
   const stats = [
     { label: 'Total Pledges', value: pledgeCount, icon: '🌸' },
     { label: 'Lives Impacted', value: pledgeCount * 3, icon: '❤️' },
@@ -119,6 +121,8 @@ const Index = () => {
         </div>
       </div>
 
+      <AuthenticatedHeader />
+
       {/* Hero Section */}
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-8 md:py-16">
@@ -142,7 +146,7 @@ const Index = () => {
               Bloom for Lungs
             </h1>
             <p className="text-lg md:text-2xl text-green-100 leading-relaxed max-w-3xl mx-auto">
-              Join the movement for healthier lungs and a tobacco-free future. 
+              Join the movement for healthier lungs and a tobacco-free future.
               <br className="hidden md:block" />
               Every pledge helps our community reach maximum lung health.
             </p>
@@ -199,8 +203,7 @@ const Index = () => {
                 Take Your Pledge Today
               </h2>
               <p className="text-green-100 text-base md:text-lg leading-relaxed">
-                Join thousands of others who have committed to healthier lungs and a tobacco-free lifestyle. 
-                Your pledge makes a difference!
+                Join thousands of others who have committed to healthier lungs and a tobacco-free lifestyle.
               </p>
             </div>
             <div id="pledge-form">
@@ -216,7 +219,7 @@ const Index = () => {
               </h2>
               <p className="text-green-100 text-base md:text-lg leading-relaxed">
                 Every pledge brings us closer to maximum lung health! 
-                See the progress towards our goal of 200 pledges.
+                Progress: {Math.round(completionPercentage)}% complete.
               </p>
             </div>
             <LungsModel3D pledgeCount={pledgeCount} shouldAnimate={shouldAnimateLungs} />
@@ -231,8 +234,7 @@ const Index = () => {
             Ready to Make a Difference?
           </h2>
           <p className="text-base md:text-lg text-green-100 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Your commitment to a tobacco-free lifestyle inspires others and contributes to a healthier world. 
-            Together, we can achieve maximum lung health!
+            Your commitment to a tobacco-free lifestyle inspires others and contributes to a healthier world.
           </p>
           <div className="flex justify-center">
             <Button 
