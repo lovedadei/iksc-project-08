@@ -90,15 +90,15 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
       setIsSubmitting(true);
       
       try {
-        // Check if user already has a pledge
-        const { data: existingPledge, error: checkError } = await supabase
+        // Check if user already has a pledge - simplified query
+        const existingPledgeResult = await supabase
           .from('pledges')
           .select('id, referral_code, full_name')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .limit(1);
 
-        if (checkError) {
-          console.error('Error checking existing pledges:', checkError);
+        if (existingPledgeResult.error) {
+          console.error('Error checking existing pledges:', existingPledgeResult.error);
           toast({
             title: "Error checking existing pledges",
             description: "Please try again later.",
@@ -107,6 +107,8 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           setIsSubmitting(false);
           return;
         }
+
+        const existingPledge = existingPledgeResult.data?.[0];
 
         if (existingPledge) {
           // User already pledged
@@ -130,16 +132,16 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
         // Generate referral code
         let referralCode = '';
         try {
-          const { data: referralCodeData, error: referralCodeError } = await supabase
+          const referralCodeResult = await supabase
             .rpc('generate_referral_code', { user_name: formData.fullName });
 
-          if (referralCodeError) {
-            console.error('Error generating referral code:', referralCodeError);
+          if (referralCodeResult.error) {
+            console.error('Error generating referral code:', referralCodeResult.error);
             // Fallback to manual generation
             const cleanName = formData.fullName.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
             referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
           } else {
-            referralCode = referralCodeData;
+            referralCode = referralCodeResult.data || '';
           }
         } catch (error) {
           console.error('Error calling generate_referral_code function:', error);
@@ -148,8 +150,8 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
           referralCode = `${cleanName || 'USER'}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         }
 
-        // Create new pledge with user_id
-        const { data: newPledge, error: pledgeError } = await supabase
+        // Create new pledge with user_id - simplified query
+        const newPledgeResult = await supabase
           .from('pledges')
           .insert({
             full_name: formData.fullName.trim(),
@@ -158,10 +160,22 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
             user_id: user.id
           })
           .select()
-          .single();
+          .limit(1);
 
-        if (pledgeError) {
-          console.error('Error creating pledge:', pledgeError);
+        if (newPledgeResult.error) {
+          console.error('Error creating pledge:', newPledgeResult.error);
+          toast({
+            title: "Error creating pledge",
+            description: "Please try again later.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        const newPledge = newPledgeResult.data?.[0];
+        if (!newPledge) {
+          console.error('No pledge data returned');
           toast({
             title: "Error creating pledge",
             description: "Please try again later.",
@@ -175,35 +189,38 @@ const PledgeForm: React.FC<PledgeFormProps> = ({ onPledgeSubmit }) => {
 
         // Handle referral if there's a referral code
         if (formData.referralCode.trim()) {
-          const { data: referrerPledge, error: referrerError } = await supabase
+          const referrerResult = await supabase
             .from('pledges')
             .select('id, full_name')
             .eq('referral_code', formData.referralCode.trim())
-            .maybeSingle();
+            .limit(1);
 
-          if (referrerError) {
-            console.error('Error finding referrer:', referrerError);
-          } else if (referrerPledge) {
-            // Add referral record
-            const { error: referralError } = await supabase
-              .from('referrals')
-              .insert({
-                referrer_pledge_id: referrerPledge.id,
-                referred_pledge_id: newPledge.id,
-                referral_code: formData.referralCode.trim()
-              });
-
-            if (referralError) {
-              console.error('Error creating referral:', referralError);
-            } else {
-              console.log('Referral created successfully for referrer:', referrerPledge.full_name);
-              toast({
-                title: "Referral bonus!",
-                description: `You were referred by ${referrerPledge.full_name}. Thank you for joining!`,
-              });
-            }
+          if (referrerResult.error) {
+            console.error('Error finding referrer:', referrerResult.error);
           } else {
-            console.log('Referral code not found:', formData.referralCode);
+            const referrerPledge = referrerResult.data?.[0];
+            if (referrerPledge) {
+              // Add referral record
+              const referralResult = await supabase
+                .from('referrals')
+                .insert({
+                  referrer_pledge_id: referrerPledge.id,
+                  referred_pledge_id: newPledge.id,
+                  referral_code: formData.referralCode.trim()
+                });
+
+              if (referralResult.error) {
+                console.error('Error creating referral:', referralResult.error);
+              } else {
+                console.log('Referral created successfully for referrer:', referrerPledge.full_name);
+                toast({
+                  title: "Referral bonus!",
+                  description: `You were referred by ${referrerPledge.full_name}. Thank you for joining!`,
+                });
+              }
+            } else {
+              console.log('Referral code not found:', formData.referralCode);
+            }
           }
         }
 
