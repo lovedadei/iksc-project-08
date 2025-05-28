@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -82,11 +81,11 @@ const PledgeSuccessModal: React.FC<PledgeSuccessModalProps> = ({
       const ikscLogo = await loadImage('/lovable-uploads/fbdff461-1ffb-485c-8e93-3141b2515bc0.png');
       const kareLogo = await loadImage('/lovable-uploads/9c57fcd0-54f8-4f2a-8ff5-70b9175a0fb4.png');
       
-      // Draw IKSC logo on the left
-      ctx.drawImage(ikscLogo, 100, 30, 120, 120);
+      // Draw IKSC logo on the left (smaller width)
+      ctx.drawImage(ikscLogo, 120, 30, 80, 120);
       
       // Draw KARE logo on the right
-      ctx.drawImage(kareLogo, 580, 30, 120, 120);
+      ctx.drawImage(kareLogo, 600, 30, 120, 120);
       
       // Add chapter name
       ctx.fillStyle = '#1f2937';
