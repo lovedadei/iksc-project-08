@@ -13,6 +13,39 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Handle OAuth callback from URL hash
+    const handleAuthCallback = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+          return;
+        }
+
+        if (data.session?.user) {
+          console.log('User found in session:', data.session.user.email);
+          setUser(data.session.user);
+          toast({
+            title: "Welcome!",
+            description: `Successfully signed in as ${data.session.user.user_metadata?.full_name || data.session.user.email}`,
+          });
+          // Clear the URL hash and navigate to home
+          window.history.replaceState({}, document.title, window.location.pathname);
+          navigate('/', { replace: true });
+          return;
+        }
+      } catch (error) {
+        console.error('Error handling auth callback:', error);
+      }
+    };
+
+    // Check if there's a hash in the URL (OAuth callback)
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      console.log('OAuth callback detected, processing...');
+      handleAuthCallback();
+      return;
+    }
+
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -34,7 +67,8 @@ const Auth = () => {
           title: "Welcome!",
           description: `Successfully signed in as ${session.user.user_metadata?.full_name || session.user.email}`,
         });
-        // Use replace to avoid back button issues
+        // Clear any hash in URL and navigate to home
+        window.history.replaceState({}, document.title, window.location.pathname);
         navigate('/', { replace: true });
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -50,7 +84,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/auth`,
         }
       });
 
