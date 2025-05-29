@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PledgeForm from '../components/PledgeForm';
 import LungsModel3D from '../components/LungsModel3D';
@@ -246,6 +245,23 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 bg-green-900/50 backdrop-blur-sm py-6 border-t border-green-600/30">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-green-200 text-sm">
+            Developed by{' '}
+            <a 
+              href="https://rdmcoder.tech" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-white font-semibold hover:text-green-300 transition-colors duration-300 underline hover:no-underline"
+            >
+              RDMCODER
+            </a>
+          </p>
+        </div>
+      </footer>
 
       {/* Success Modal */}
       <PledgeSuccessModal
